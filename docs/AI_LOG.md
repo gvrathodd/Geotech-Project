@@ -64,3 +64,14 @@ Each row is a choice the AI proposed in the code; the group decides.
 | D17 | Alternative foundation | AI recommended bored piles under all columns | Group asked: "CPRF and PF are taught and footing, raft etc are taught, what will work for project?" → AI explained Poulos (2001) unfavourable conditions for CPRF; **group asked to analyse CPRF too before rejecting it** | PDR analysis: raft share 1.2 % (BH-3), 5.7 % (BH-1), 39 % (BH-2) → CPRF rejected, **PF adopted** |
 | D18 | Pile capacity method | Reese & O'Neill (SPT) | **Changed by group: both Reese & O'Neill and IS 2911 Annex B as cross-check** | Group to read Nq from IS 2911 Fig. 1 (AI explained how to read a log-scale chart) |
 | D19 | Pile diameter | AI recommended 600 mm | **Changed by group: 750 mm** | **[GROUP: reason – e.g. fewer piles, better lateral capacity in Zone V]** |
+
+---
+
+## Session 2 – 21 Nov 2026 – Claude Code: verification against class notes
+
+**Prompt (verbatim):** "This has textbook examples, run relavent onse" (with the M3, M4 and M6 notes attached)
+
+| AI output | Accepted / changed / rejected | Reason |
+|---|---|---|
+| Ran M3 Problems 1, 2, 3, 6 and Q12 through the platform code; shared values (q, Nc, Nq, d-factors, c_m, e, B′, A′, SPT steps) matched | Accepted | Differences only where IS 6403 differs from Terzaghi/Meyerhof (Nγ, 0.67 vs ⅔, W′) |
+| Found that depth factors used B′ and that the kern warning fired at e = B/6 | **Accepted the fix** | Class notes P6 use D_f/B; added as tests (audit item A6) |

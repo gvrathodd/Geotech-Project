@@ -453,6 +453,14 @@ audit = [
      "Code review against IS 6403 cl. 5.1.2(b): local shear uses ⅔c. On soft clay the first version "
      "overestimated q_nu by 50%.",
      "Corrected: undrained uses the user flag only, and local shear applies 2/3 cu. Benchmark tests were added."),
+    ("A6 – Depth factors computed with the reduced width B′ for eccentric footings",
+     "The AI's bearing module replaced B with B′ everywhere, including the depth factors (D_f/B′).",
+     "Benchmark against CE 402 class notes, M3 Problem 6 (2.4 × 3.0 m footing, e = 0.40 m): the notes take "
+     "D_f/B with B = 2.4 m, giving d_c = 1.166 and d_q = 1.083. The platform gave 1.250 and 1.125, which overstates "
+     "q_nu. The same check showed a false 'e > B/6' warning at e = B/6 exactly, caused by floating-point rounding.",
+     "The depth factors now use the actual width B (B′ only in the shape factors and the γ term); the kern check has a "
+     "tolerance. The notes' Problem 6 and Q12 were added as permanent tests. The hostel design is unchanged "
+     "(C4 e = 0.034 m)."),
 ]
 for title, out, detect, fix in audit:
     P(title, bold=True)
