@@ -6,6 +6,7 @@ Presentation only: nothing here affects a calculation.
 from __future__ import annotations
 
 import html
+import json
 import re
 from pathlib import Path
 
@@ -312,8 +313,9 @@ hr { border-color: rgba(255,255,255,0.08) !important; }
 .sec-sub { color: var(--muted); font-size: .92rem; margin: 6px 0 14px; max-width: 980px; }
 
 .brand { display: flex; align-items: center; gap: 12px; font: 800 1.2rem 'Outfit', sans-serif; color: #fff; margin: 6px 0 2px; letter-spacing: -0.01em; }
-.brand .mark { width: 38px; height: 38px; border-radius: 13px; display: grid; place-items: center; color: #04170F;
-  background: linear-gradient(135deg, #2EF0A8, #FFD27A); box-shadow: 0 0 26px -4px rgba(46,240,168,0.85), inset 0 1px 0 rgba(255,255,255,0.7); }
+.brand .mark { width: 42px; height: 42px; flex: none; display: block; border-radius: 14px;
+  box-shadow: 0 6px 24px -6px rgba(46,240,168,0.7), 0 0 30px -10px rgba(255,182,39,0.6); }
+.brand .mark svg { width: 100%; height: 100%; display: block; }
 .brand-sub { color: var(--muted); font-size: .8rem; margin: 2px 0 10px 50px; }
 
 /* clickable result tiles -> jump to source section */
@@ -583,12 +585,23 @@ INTERACTIONS_JS = re.sub(r"<(?=[/A-Za-z!?])", r"\\x3c",
                          (Path(__file__).with_name("interactions.js")).read_text(encoding="utf-8"))
 
 
+LOGO_SVG = re.sub(r"\s*\n\s*", " ", Path(__file__).with_name("logo.svg").read_text(encoding="utf-8")).strip()
+# browser-tab icon: the same SVG as a data URI ("<" escaped as \x3c for DOMPurify, as above)
+FAVICON_JS = re.sub(r"<(?=[/A-Za-z!?])", r"\\x3c", (
+    "(function(){var svg=" + json.dumps(LOGO_SVG) + ";"
+    "var href='data:image/svg+xml,'+encodeURIComponent(svg);"
+    "document.querySelectorAll(\"link[rel~='icon']\").forEach(function(l){l.href=href;l.type='image/svg+xml';});"
+    "if(!document.querySelector(\"link[rel~='icon']\")){var l=document.createElement('link');l.rel='icon';"
+    "l.type='image/svg+xml';l.href=href;document.head.appendChild(l);}})();"))
+
+
 def inject():
     _card["n"] = 0
     _mx["n"] = 0
     st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True)
     st.html(SMOOTH_SCROLL_JS, unsafe_allow_javascript=True)
     st.html(f'<div class="fs-js"></div><script>{INTERACTIONS_JS}</script>', unsafe_allow_javascript=True)
+    st.html(f'<div class="fs-js"></div><script>{FAVICON_JS}</script>', unsafe_allow_javascript=True)
     _plotly_template()
 
 
@@ -701,5 +714,5 @@ def shortcuts_hint():
 
 
 def brand():
-    st.markdown(f'<div class="brand"><span class="mark">{icon("layers", 20)}</span>Foundation Studio</div>'
+    st.markdown(f'<div class="brand"><span class="mark">{LOGO_SVG}</span>Foundation Studio</div>'
                 f'<div class="brand-sub">CE 402 · IIT Mandi · Group 1</div>', unsafe_allow_html=True)

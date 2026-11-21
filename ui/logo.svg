@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Foundation Studio">
+  <defs>
+    <linearGradient id="fs-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11402F"/>
+      <stop offset="1" stop-color="#04110B"/>
+    </linearGradient>
+    <linearGradient id="fs-rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8CFFD5"/>
+      <stop offset=".5" stop-color="#2EF0A8" stop-opacity=".15"/>
+      <stop offset="1" stop-color="#FFD27A"/>
+    </linearGradient>
+    <linearGradient id="fs-foot" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2EF0A8"/>
+      <stop offset="1" stop-color="#FFD27A"/>
+    </linearGradient>
+    <radialGradient id="fs-glow" cx=".5" cy=".62" r=".45">
+      <stop offset="0" stop-color="#2EF0A8" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#2EF0A8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#fs-bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="url(#fs-glow)"/>
+  <rect x="2.75" y="2.75" width="58.5" height="58.5" rx="16.3" fill="none" stroke="url(#fs-rim)" stroke-width="1.5"/>
+  <!-- pressure bulb -->
+  <path d="M20.5 38.5 A11.5 11.5 0 0 0 43.5 38.5" fill="none" stroke="#F4FBF7" stroke-width="1.4"
+        stroke-dasharray="2.2 2.4" stroke-linecap="round" opacity=".45"/>
+  <!-- soil strata -->
+  <path d="M8 45 Q32 35.5 56 45" fill="none" stroke="#2EF0A8" stroke-width="3" stroke-linecap="round"/>
+  <path d="M9 51.5 Q32 43 55 51.5" fill="none" stroke="#B5FFE2" stroke-width="2.3" stroke-linecap="round" opacity=".55"/>
+  <path d="M11 57.5 Q32 50 53 57.5" fill="none" stroke="#FFB627" stroke-width="2.3" stroke-linecap="round" opacity=".9"/>
+  <!-- column on a spread footing -->
+  <rect x="27.5" y="11" width="9" height="21" rx="2.2" fill="#F4FBF7"/>
+  <rect x="16.5" y="31" width="31" height="7.5" rx="2.6" fill="url(#fs-foot)"/>
+</svg>
