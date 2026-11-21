@@ -23,6 +23,19 @@ All inputs and outputs are in SI units, with the unit shown next to each value. 
 
 The theme (`ui/theme.py`) targets Streamlit 1.67, so `requirements.txt` pins that version to keep the deployed look identical.
 
+### Working with the results
+
+- **Result tiles** at the top update live. Click one to jump to the section its value comes from
+  (that card glows); the **Footing** tile opens and highlights the footing and load inputs. Tiles
+  whose value changed after an edit glow gold and show the change (e.g. `+2 kPa`).
+- **Click any metric** (it shows `ƒx`) for its formula, your numbers substituted and the code clause
+  or reference, which is useful for hand-checking.
+- **Click a section badge** (P3·a, P5·d…) to copy a link straight to that section; opening the link
+  restores the tab and position.
+- **Click a point** on the SPT, stress, Iz/E, oedometer or liquefaction chart to highlight its table row.
+- **On this tab** (sidebar) lists every card on the current tab; **Back to results** returns to the tiles.
+- **Keyboard:** `1`–`7` switch tabs, `/` jumps to the footing inputs, `?` lists shortcuts, `Esc` closes a dialog.
+
 ### Why there is a liquefaction tab
 
 The brief lists P1–P5 and P8 only. We added a liquefaction screen because the hostel site
