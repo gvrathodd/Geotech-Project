@@ -193,7 +193,7 @@ with tabs[0]:
     with ui.card():
         ui.section("P1", "Soil profile & water tables",
                    "The measured level drives the IS 2131 corrections; the design level drives bearing, "
-                   "settlement and liquefaction.")
+                   "settlement and liquefaction.", anchor="p1")
         c1, c2, c3 = st.columns([2, 1, 1])
         D["name"] = c1.text_input("Profile name", D.get("name", ""), key=f"name{ver}")
         gwt_m = c2.number_input("Measured water table (m bgl)", 0.0, 100.0, float(D.get("gwt_measured", 3.0)), 0.1,
@@ -415,7 +415,7 @@ if R is not None:
         with ui.card():
             ui.section("P3·a", "Inputs resolved from the profile",
                        f"Founding layer: {R.layer} · {'undrained, φ = 0' if R.undrained else 'drained'} · "
-                       f"design WT {gwt_d:.2f} m bgl")
+                       f"design WT {gwt_d:.2f} m bgl", anchor="p3a")
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("c used (kPa)", f"{R.c:.2f}")
             c2.metric("φ used (°)", f"{R.phi:.2f}")
@@ -444,7 +444,7 @@ if R is not None:
 
         with ui.card():
             ui.section("P3·c", "Capacity vs applied pressure",
-                       "Net applied = (P + W_footing+backfill − σv,total(Df)·A)/A′, compared with the net safe capacity.")
+                       "Net applied = (P + W_footing+backfill − σv,total(Df)·A)/A′, compared with the net safe capacity.", anchor="p3c")
             c1, c2, c3 = st.columns(3)
             c1.metric(f"q_nu (kPa) · {R.mode_used.split(' (')[0]}", f"{R.q_nu:.1f}")
             c2.metric(f"q_ns = q_nu/{FS:g} (kPa)", f"{R.q_ns:.1f}")
@@ -605,9 +605,9 @@ with tabs[4]:
 
     total = SR.settlement + CR.total
     with ui.card():
-        ui.section("P5·d", "Settlement summary")
+        ui.section("P5·d", "Settlement summary", anchor="p5d")
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Granular, Schmertmann (mm)", f"{SR.settlement * 1000:.1f}")
+        c1.metric("Sand, Schmertmann (mm)", f"{SR.settlement * 1000:.1f}")
         c2.metric("Consolidation (mm)", f"{CR.total * 1000:.1f}")
         c3.metric("Total (mm)", f"{total * 1000:.1f}")
         lim = c4.number_input("Permissible total (mm), IS 1904 value", 0.0, 500.0, 75.0, 5.0)
@@ -621,7 +621,7 @@ with tabs[5]:
         ui.section("Extra", "Liquefaction triggering: IS 1893 (Part 1):2016 Annex F",
                    "Not part of the P1–P5 brief. It is included because shallow saturated sands in high "
                    "seismic zones must be screened. CSR = 0.65 (a_max/g)(σv/σ′v) r_d; CRR from (N1)60cs "
-                   "(Youd et al. 2001); FS = CRR·MSF/CSR.")
+                   "(Youd et al. 2001); FS = CRR·MSF/CSR.", anchor="liq")
         c1, c2, c3, c4 = st.columns(4)
         amax = c1.number_input("a_max / g (–)", 0.01, 1.0, 0.36, 0.01, help="e.g. zone factor Z (IS 1893 Table 3)")
         Mw = c2.number_input("Moment magnitude Mw (–)", 5.0, 9.0, 7.5, 0.1)
@@ -666,18 +666,22 @@ with summary:
     items = []
     if R is not None:
         items.append(ui.tile("Founding layer", R.layer.split("(")[0].strip()[:34], sub=f"φ {R.phi:.1f}° · W′ {R.W:.2f}",
-                             ic="layers", text=True))
-        items.append(ui.tile("Net safe capacity", f"{R.q_ns:.0f}", "kPa", f"q_nu {R.q_nu:.0f} kPa · FS {FS:g}", ic="gauge", state="gold"))
+                             ic="layers", text=True, go_to=(2, "p3a", "P3 Bearing · inputs resolved from the profile")))
+        items.append(ui.tile("Net safe capacity", f"{R.q_ns:.0f}", "kPa", f"q_nu {R.q_nu:.0f} kPa · FS {FS:g}", ic="gauge", state="gold",
+                             go_to=(2, "p3c", "P3 Bearing · capacity vs applied pressure")))
         if R.q_net_applied is not None:
             items.append(ui.tile("Net applied", f"{R.q_net_applied:.0f}", "kPa",
                                  "Bearing check passes" if R.ok else "Bearing check fails",
-                                 ic="check" if R.ok else "x", state="pass" if R.ok else "fail"))
+                                 ic="check" if R.ok else "x", state="pass" if R.ok else "fail",
+                                 go_to=(2, "p3c", "P3 Bearing · capacity vs applied pressure")))
     items.append(ui.tile("Total settlement", f"{total * 1000:.0f}", "mm",
                          f"sand {SR.settlement * 1000:.0f} · clay {CR.total * 1000:.0f} mm", ic="arrow-down",
-                         state="pass" if total * 1000 <= lim else "fail"))
+                         state="pass" if total * 1000 <= lim else "fail",
+                         go_to=(4, "p5d", "P5 Settlement · summary")))
     fs_vals = [r.FS for r in LR if math.isfinite(r.FS)]
     if fs_vals:
         mfs = min(fs_vals)
         items.append(ui.tile("Liquefaction, min FS", f"{mfs:.2f}", "", "IS 1893 Annex F",
-                             ic="waves", state="pass" if mfs >= 1 else "fail"))
+                             ic="waves", state="pass" if mfs >= 1 else "fail",
+                             go_to=(5, "liq", "Liquefaction check")))
     ui.tiles(items)

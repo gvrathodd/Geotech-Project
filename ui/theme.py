@@ -38,6 +38,7 @@ ICONS = {
              '<path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>'
              '<path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>',
     "activity": '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    "arrow-up-right": '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
 }
 
 
@@ -312,6 +313,26 @@ hr { border-color: rgba(255,255,255,0.08) !important; }
   background: linear-gradient(135deg, #2EF0A8, #FFD27A); box-shadow: 0 0 26px -4px rgba(46,240,168,0.85), inset 0 1px 0 rgba(255,255,255,0.7); }
 .brand-sub { color: var(--muted); font-size: .8rem; margin: 2px 0 10px 50px; }
 
+/* clickable result tiles -> jump to source section */
+a.tile { display: block; color: inherit !important; text-decoration: none !important; cursor: pointer; }
+a.tile .go { position: absolute; top: 16px; right: 16px; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; color: var(--mint); background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14); opacity: 0; transform: translate(-6px, 6px) scale(.85);
+  transition: opacity .3s var(--ease), transform .45s var(--spring); }
+a.tile:hover .go, a.tile:focus-visible .go { opacity: 1; transform: none; }
+a.tile.pass .go { color: #0B7A55; background: rgba(4,23,15,0.06); border-color: rgba(4,23,15,0.12); }
+a.tile:active { transform: translateY(-2px) scale(.985); }
+a.tile:focus-visible { outline: 2px solid var(--gold) !important; outline-offset: 4px; }
+@media (hover: none) { a.tile .go { opacity: .85; transform: none; } }
+.fs-anchor { scroll-margin-top: 110px; }
+[class*="st-key-glass"].fs-flash { animation: flash 2.2s var(--ease); }
+[class*="st-key-glass"].fs-flash::before { opacity: 1; }
+@keyframes flash {
+  0%   { box-shadow: var(--rim), var(--lift), 0 0 0 0 rgba(46,240,168,0); }
+  18%  { box-shadow: var(--rim), var(--lift), 0 0 0 3px rgba(46,240,168,0.95), 0 0 70px -6px rgba(46,240,168,0.7); }
+  100% { box-shadow: var(--rim), var(--lift), 0 0 0 0 rgba(46,240,168,0); }
+}
+
 /* compact "Export CSV" button under each table */
 [class*="st-key-csv_"] { margin-top: -6px; }
 [class*="st-key-csv_"] button { min-height: 0 !important; padding: 5px 14px 5px 11px !important; font-size: .8rem !important;
@@ -400,10 +421,50 @@ SMOOTH_SCROLL_JS = r"""
 """
 
 
+# Result tiles are <a> links: a click (or Enter) selects the source tab, waits until its panel is
+# visible, glides to the section heading (offset for the sticky tab dock) and pulses the card.
+# Modifier-clicks are left alone.  Installed once per page load.
+NAV_JS = r"""
+<div class="fs-js"></div>
+<script>
+(function () {
+  var VER = 1;
+  if (window.__fsNavVer === VER) return;
+  window.__fsNavVer = VER;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function reveal(anchor) {
+    var tries = 0;
+    (function wait() {
+      var sec = document.querySelector('[data-fs-section="' + anchor + '"]') || document.querySelector('.fs-a-' + anchor);
+      if (!sec || sec.offsetParent === null) { if (tries++ < 60) requestAnimationFrame(wait); return; }
+      var main = document.querySelector('[data-testid="stMain"]') || document.scrollingElement;
+      var top = sec.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop - 120;
+      main.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
+      var card = sec.closest('[class*="st-key-glass"]') || sec;
+      clearTimeout(card.__fsFlashTimer);
+      card.classList.remove('fs-flash'); void card.offsetWidth; card.classList.add('fs-flash');
+      card.__fsFlashTimer = setTimeout(function () { card.classList.remove('fs-flash'); }, 2400);
+    })();
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[data-fs-tab]') : null;
+    if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    var tabs = document.querySelectorAll('.stTabs [data-testid="stTab"]');
+    var tab = tabs[+a.getAttribute('data-fs-tab')];
+    if (tab && tab.getAttribute('aria-selected') !== 'true') tab.click();
+    reveal(a.getAttribute('data-fs-anchor'));
+  });
+})();
+</script>
+"""
+
+
 def inject():
     _card["n"] = 0
     st.markdown(f"<style>{CSS}</style>", unsafe_allow_html=True)
     st.html(SMOOTH_SCROLL_JS, unsafe_allow_javascript=True)
+    st.html(NAV_JS, unsafe_allow_javascript=True)
     _plotly_template()
 
 
@@ -440,12 +501,21 @@ def hero(title_a: str, title_b: str, sub: str, chips: list[str], kicker: str):
 
 
 def tile(label: str, value: str, unit: str = "", sub: str = "", ic: str = "gauge", state: str = "",
-         text: bool = False) -> str:
+         text: bool = False, go_to: tuple[int, str, str] | None = None) -> str:
+    """Result tile.  go_to = (tab index, section anchor, tab name) turns the tile into a link that
+    switches to that tab, glides to the section the value comes from and pulses its card."""
     cls = " ".join(c for c in ["tile", state, "text" if text else ""] if c)
     u = f"<small>{html.escape(unit)}</small>" if unit else ""
     s = f'<div class="sub">{html.escape(sub)}</div>' if sub else ""
-    return (f'<div class="{cls}"><div class="ic">{icon(ic, 20)}</div><div class="lbl">{html.escape(label)}</div>'
-            f'<div class="val">{html.escape(value)}{u}</div>{s}</div>')
+    body = (f'<div class="ic">{icon(ic, 20)}</div><div class="lbl">{html.escape(label)}</div>'
+            f'<div class="val">{html.escape(value)}{u}</div>{s}')
+    if go_to is None:
+        return f'<div class="{cls}">{body}</div>'
+    tab, anchor, where = go_to
+    aria = html.escape(f"{label}: {' '.join(x for x in (value, unit) if x)}. Open {where}", quote=True)
+    return (f'<a class="{cls}" href="#sec-{anchor}" data-fs-tab="{tab}" data-fs-anchor="{anchor}" '
+            f'aria-label="{aria}" title="Open {html.escape(where, quote=True)}">'
+            f'<span class="go">{icon("arrow-up-right", 16)}</span>{body}</a>')
 
 
 def tiles(items: list[str]):
@@ -457,9 +527,11 @@ def pill(ok: bool, yes: str = "PASS", no: str = "FAIL") -> str:
             f'{yes if ok else no}</span>')
 
 
-def section(no: str, title: str, sub: str = ""):
+def section(no: str, title: str, sub: str = "", anchor: str | None = None):
+    """Section heading inside a glass card.  `anchor` makes it a jump target for result tiles."""
     s = f'<p class="sec-sub">{sub}</p>' if sub else ""
-    st.markdown(f'<div class="sec"><span class="no" translate="no">{html.escape(no)}</span>'
+    a = f' id="sec-{anchor}" data-fs-section="{anchor}"' if anchor else ""
+    st.markdown(f'<div class="sec fs-anchor fs-a-{anchor or "none"}"{a}><span class="no" translate="no">{html.escape(no)}</span>'
                 f'<h3>{html.escape(title)}</h3></div>{s}', unsafe_allow_html=True)
 
 
