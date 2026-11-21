@@ -259,7 +259,7 @@ with tabs[0]:
                                 key=f"gwd{ver}", help="e.g. highest seasonal level")
         st.markdown("**Layers**: add or delete rows freely. Units are given in every column heading.")
         ldf = st.data_editor(
-            layers_to_df(D.get("layers", [])), num_rows="dynamic", key=f"layers{ver}", width="stretch",
+            layers_to_df(D.get("layers", [])), num_rows="dynamic", key=f"layers{ver}_{st.session_state.get('lv', 0)}", width="stretch",
             column_config={
                 "Type": st.column_config.SelectboxColumn(options=list((GRANULAR, COHESIVE)), required=True),
                 "Stress history": st.column_config.SelectboxColumn(options=list(HISTORY_MODES),
@@ -267,10 +267,27 @@ with tabs[0]:
                 "Drainage": st.column_config.SelectboxColumn(options=["Double", "Top only", "Bottom only"]),
                 "Description": st.column_config.TextColumn(width="medium"),
             })
-        csv_button(ldf, "layers")
+        b1, b2 = st.columns([1, 3])
+        if b1.button("Add Layer", icon=":material/add:", width="stretch", key="add_layer"):
+            rows = ldf.rename(columns={c: k for k, c in LAYER_COLS}).to_dict("records")
+            last = max((r["bottom"] for r in rows if pd.notna(r.get("bottom"))), default=0.0)
+            D["layers"] = rows + [dict(top=last, bottom=last + 1.0, description="New layer", soil_type=GRANULAR)]
+            st.session_state["lv"] = st.session_state.get("lv", 0) + 1
+            st.rerun()
+        with b2:
+            csv_button(ldf, "layers")
         st.markdown("**SPT records**: observed N. Tick *Refusal* when 50 blows gave less than 300 mm.")
-        sdf = st.data_editor(spt_to_df(D.get("spt", [])), num_rows="dynamic", key=f"spt{ver}")
-        csv_button(sdf, "spt_records")
+        sdf = st.data_editor(spt_to_df(D.get("spt", [])), num_rows="dynamic",
+                             key=f"spt{ver}_{st.session_state.get('sv', 0)}")
+        b1, b2 = st.columns([1, 3])
+        if b1.button("Add SPT Record", icon=":material/add:", width="stretch", key="add_spt"):
+            rows = sdf.rename(columns={c: k for k, c in SPT_COLS}).to_dict("records")
+            last = max((r["depth"] for r in rows if pd.notna(r.get("depth"))), default=0.0)
+            D["spt"] = [r for r in rows] + [dict(depth=last + 1.5, N=None, refusal=False)]
+            st.session_state["sv"] = st.session_state.get("sv", 0) + 1
+            st.rerun()
+        with b2:
+            csv_button(sdf, "spt_records")
 
     gwt_m = 100.0 if gwt_m is None else gwt_m  # left empty: no water table within the profile
     gwt_d = 100.0 if gwt_d is None else gwt_d

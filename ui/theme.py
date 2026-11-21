@@ -458,6 +458,22 @@ section[data-testid="stSidebar"] .fs-hl { border-radius: 16px; animation: inputh
   section[data-testid="stSidebar"] > div:first-child { margin: 0; height: 100vh; border-radius: 0 26px 26px 0; }
   .tile .val { font-size: 1.7rem; }
 }
+/* =================== input vs result tables =================== */
+/* input tables = data editors: their toolbar has "Add row" (fines editor has fixed rows) */
+.stElementContainer:is(:has(button[aria-label="Add row"]), [class*="st-key-fines"]):has([data-testid="stDataFrame"])::after {
+  content: "✎  INPUT TABLE · double-click a cell to edit · click the blank bottom row to add a row"; display: block; margin: 8px 0 2px;
+  font: 700 .72rem 'Inter', sans-serif; letter-spacing: .08em; color: var(--mint); }
+.stElementContainer:is(:has(button[aria-label="Add row"]), [class*="st-key-fines"]) [data-testid="stDataFrame"] {
+  border-radius: 16px; box-shadow: 0 0 0 2px rgba(46,240,168,0.6), 0 0 28px -6px rgba(46,240,168,0.55) !important; }
+.stElementContainer:has([data-testid="stDataFrame"]):not(:has(button[aria-label="Add row"])):not([class*="st-key-fines"])::before {
+  content: "RESULT · read-only"; display: block; margin: 2px 0 8px;
+  font: 700 .7rem 'Inter', sans-serif; letter-spacing: .08em; color: var(--muted); opacity: .75; }
+/* keep the editor toolbar visible and turn "Add row" into a labelled pill */
+
+button[aria-label="Add row"] { width: auto !important; padding: 0 12px 0 8px !important; border-radius: 999px !important;
+  background: linear-gradient(135deg, #2EF0A8, #B5FFE2) !important; color: #04170F !important; gap: 4px; }
+button[aria-label="Add row"]::after { content: "Add row"; font: 700 .75rem 'Inter', sans-serif; }
+
 /* =================== phones =================== */
 @media (max-width: 640px) {
   .block-container { padding: 1rem 0.8rem 5rem !important; }
