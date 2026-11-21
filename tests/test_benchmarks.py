@@ -131,3 +131,20 @@ def test_bearing_square_dry_sand():
     exp = q * (18.401 - 1) * 1.2 + 0.5 * 2 * 18 * 22.402 * 0.8
     assert r.q_nu == pytest.approx(exp, rel=1e-3)
     assert r.q_ns == pytest.approx(exp / 3, rel=1e-3)
+
+
+def test_eccentric_footing_class_notes_p6():
+    # CE 402 notes M3 Problem 6: 2.4 x 3.0 m, Df 1.2 m, Q 900 kN, M 360 kN.m along B, phi 28, gamma 18
+    p = SoilProfile([Layer(0, 20, "soil", gamma_moist=18, gamma_sat=20, c_eff=15, phi_eff=28)], 50, 50)
+    r = bearing_capacity(p, "Rectangle", 2.4, 3.0, 1.2, P=900, MB=360, mode="general")
+    assert (r.eB, r.B_eff, r.L_eff, r.A_eff) == pytest.approx((0.40, 1.60, 3.00, 4.80))
+    assert (r.dc, r.dq) == pytest.approx((1.166, 1.083), abs=1e-3)   # Df/B with B = 2.4, not B'
+    assert not any("kern" in w for w in r.warnings)                  # e = B/6 exactly is on the kern
+
+
+def test_spt_class_notes_q12():
+    # CE 402 notes M3 Q12: N = 16 + 22 = 38 at 7.5 m, GWT 1.5 m, gamma 18 / 20, fine sand
+    p = SoilProfile([Layer(0, 20, "fine sand", gamma_moist=18, gamma_sat=20, dilatancy=True)], 1.5, 1.5,
+                    [SPTRecord(7.5, 38)])
+    s = correct_profile_spt(p)[0]
+    assert (s.sigma_eff_kpa, s.CN, s.N1, s.N2) == pytest.approx((88.14, 1.0375, 39.42, 27.21), abs=0.01)

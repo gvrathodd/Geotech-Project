@@ -209,7 +209,7 @@ def bearing_capacity(profile: SoilProfile, shape: str, B: float, L: Optional[flo
         raise ValueError("Eccentricity too large: effective width <= 0.")
     if L_eff < B_eff and shape != "Strip":
         B_eff, L_eff = L_eff, B_eff
-    if (eB > B / 6 or eL > L / 6) and shape != "Circle":
+    if (eB > B / 6 + 1e-9 or eL > L / 6 + 1e-9) and shape != "Circle":  # tolerance: e = B/6 is still in the kern
         warnings.append("Eccentricity exceeds the kern (e > B/6): part of the base is in tension.")
     if shape == "Square" and (eB > 0 or eL > 0):
         shape_used = "Rectangle"  # effective area is rectangular
@@ -225,7 +225,9 @@ def bearing_capacity(profile: SoilProfile, shape: str, B: float, L: Optional[flo
     # ---- factors
     s = shape_factors(shape_used, B_eff, L_eff)
     phi_for_d = 0.0 if undrained else phi
-    d = depth_factors(phi_for_d, Df, B_eff) if use_depth_factors else (1.0, 1.0, 1.0)
+    # depth factors use the actual width B (Df/B), not B' - effective dimensions enter only the shape
+    # factors and the gamma term (Meyerhof effective-area method; Das, Principles of Foundation Engineering)
+    d = depth_factors(phi_for_d, Df, B) if use_depth_factors else (1.0, 1.0, 1.0)
     i = inclination_factors(alpha_deg, phi_for_d)
 
     gen = _terms("general", c, phi, q, gamma, B_eff, s, d, i, W, undrained)
