@@ -10,6 +10,7 @@ from __future__ import annotations
 import html
 import json
 import math
+import re
 from pathlib import Path
 
 import numpy as np
@@ -41,6 +42,22 @@ def chart(fig, height=None):
         fig.update_layout(height=height)
     fig.update_layout(margin=dict(t=40, l=10, r=10, b=10))
     st.plotly_chart(fig, width="stretch", theme=None, config={"displaylogo": False})
+
+
+def csv_button(df: pd.DataFrame, name: str):
+    """'Export CSV' under a table.  UTF-8 with BOM so Excel shows σ′, φ′, ° and ³ correctly;
+    the file name carries the profile name so exports from different boreholes don't collide."""
+    prof = re.sub(r"[^a-z0-9]+", "-", str(st.session_state.data.get("name", "profile")).lower()).strip("-")[:24]
+    slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+    st.download_button("Export CSV", df.to_csv(index=False).encode("utf-8-sig"),
+                       file_name=f"{prof or 'profile'}_{slug}.csv", mime="text/csv",
+                       icon=":material/table_view:", key=f"csv_{slug}")
+
+
+def show_df(df: pd.DataFrame, csv: str, **kw):
+    """st.dataframe followed by its Export CSV button."""
+    st.dataframe(df, **kw)
+    csv_button(df, csv)
 
 
 # ----------------------------------------------------------------- columns
@@ -193,8 +210,10 @@ with tabs[0]:
                 "Drainage": st.column_config.SelectboxColumn(options=["Double", "Top only", "Bottom only"]),
                 "Description": st.column_config.TextColumn(width="medium"),
             })
+        csv_button(ldf, "layers")
         st.markdown("**SPT records**: observed N. Tick *Refusal* when 50 blows gave less than 300 mm.")
         sdf = st.data_editor(spt_to_df(D.get("spt", [])), num_rows="dynamic", key=f"spt{ver}")
+        csv_button(sdf, "spt_records")
 
     layers = df_to_layers(ldf)
     profile = SoilProfile(layers=layers, gwt_measured=gwt_m, gwt_design=gwt_d, spt=df_to_spt(sdf),
@@ -265,7 +284,7 @@ with tabs[1]:
                              "Dilatancy applied": s.dilatancy_applies, "N″ (corrected)": s.N2,
                              "φ′ from N″ (°) [Wolff 1989]": sptmod.phi_from_n(s.N2) if g else None,
                              "qc (kPa)": qc if g else None, "E (kPa)": E if g else None, "Note": s.note})
-            st.dataframe(pd.DataFrame(rows).round(3), width="stretch", hide_index=True)
+            show_df(pd.DataFrame(rows).round(3), "spt_corrections", width="stretch", hide_index=True)
         else:
             st.info("No SPT records in the profile yet. Add them in P1.", icon=":material/info:")
 
@@ -281,6 +300,7 @@ with tabs[1]:
             dset = ds_sets[names.index(pick)]
             dsdf = st.data_editor(pd.DataFrame({"σn (kPa)": dset["sigma_n"], "τf (kPa)": dset["tau"]}),
                                   num_rows="dynamic", key=f"ds{ver}{pick}", width="stretch")
+            csv_button(dsdf, f"direct_shear_{pick}")
             force0 = st.checkbox("Force c′ = 0", False)
         dd = dsdf.dropna()
         if len(dd) >= 2:
@@ -310,6 +330,7 @@ with tabs[1]:
                 udf = st.data_editor(pd.DataFrame({"σ3 (kPa)": s.get("sigma3", [None] * len(s["deviator"])),
                                                    "(σ1−σ3)f (kPa)": s["deviator"]}), key=f"uu{ver}{k}",
                                      num_rows="dynamic", width="stretch")
+                csv_button(udf, f"uu_{s['label']}")
                 dv = udf["(σ1−σ3)f (kPa)"].dropna()
                 if len(dv):
                     cu, _ = lab.cu_from_uu(dv)
@@ -329,6 +350,7 @@ with tabs[1]:
                                                "Void ratio e (–)": oed.get("e", []), "cv": oed.get("cv", [])}),
                                  num_rows="dynamic", key=f"oed{ver}", width="stretch",
                                  column_config={"Stage": st.column_config.SelectboxColumn(options=["Loading", "Unloading"])})
+            csv_button(odf, "oedometer_input")
         od = odf.dropna(subset=["Pressure", "Void ratio e (–)", "Stage"])
         if (od["Stage"] == "Loading").sum() >= 3:
             try:
@@ -341,7 +363,7 @@ with tabs[1]:
                     m3.metric("σ′p (kPa)", f"{r.sigma_p:.1f}")
                     tab = pd.DataFrame({"p (kPa)": r.p_kpa, "Stage": r.stage, "e (–)": r.e,
                                         "cv (m²/yr)": r.cv_m2yr if r.cv_m2yr else None})
-                    st.dataframe(tab.round(3), hide_index=True, width="stretch")
+                    show_df(tab.round(3), "oedometer_results", hide_index=True, width="stretch")
                 with cR:
                     c = r.construction
                     fg = go.Figure()
@@ -411,14 +433,14 @@ if R is not None:
                        f"water-table factor W′ = {R.W:.3f} (cl. 5.1.2.4)")
             fac = pd.DataFrame({"Factor": ["Shape s", "Depth d", "Inclination i"],
                                 "c-term": [R.sc, R.dc, R.ic], "q-term": [R.sq, R.dq, R.iq], "γ-term": [R.sg, R.dg, R.ig]})
-            st.dataframe(fac.round(4), hide_index=True, width="stretch")
+            show_df(fac.round(4), "bearing_factors", hide_index=True, width="stretch")
             rows = []
             for t in (R.general, R.local):
                 rows.append({"Mode": t.mode, "c or c_m (kPa)": t.c, "φ or φ_m (°)": t.phi, "Nc": t.Nc, "Nq": t.Nq,
                              "Nγ": t.Ng, "c·Nc·s·d·i (kPa)": t.term_c, "q(Nq−1)·s·d·i (kPa)": t.term_q,
                              "½Bγ·Nγ·s·d·i·W′ (kPa)": t.term_g, "q_nu (kPa)": t.q_nu})
             st.caption("Bearing capacity factors (IS 6403 Table 1). Local shear: c_m = ⅔c, tan φ_m = 0.67 tan φ.")
-            st.dataframe(pd.DataFrame(rows).round(3), hide_index=True, width="stretch")
+            show_df(pd.DataFrame(rows).round(3), "bearing_terms", hide_index=True, width="stretch")
 
         with ui.card():
             ui.section("P3·c", "Capacity vs applied pressure",
@@ -482,7 +504,7 @@ with tabs[3]:
             fg.update_layout(xaxis_title="Δσz (kPa)", legend=dict(orientation="h", y=-0.15))
             chart(fg, 500)
         with cR:
-            st.dataframe(tbl.round(3), hide_index=True, height=500, width="stretch")
+            show_df(tbl.round(3), "stress_increase", hide_index=True, height=500, width="stretch")
     with st.expander("Stress at any point (superposition)", icon=":material/my_location:"):
         c1, c2, c3 = st.columns(3)
         xp_ = c1.number_input("x from centre along B (m)", -50.0, 50.0, 0.0)
@@ -526,7 +548,7 @@ with tabs[4]:
             fgI.update_layout(showlegend=False)
             chart(fgI, 340)
             with st.expander("Sublayer table", icon=":material/table_rows:"):
-                st.dataframe(sdf_.round(4), hide_index=True, width="stretch")
+                show_df(sdf_.round(4), "schmertmann_sublayers", hide_index=True, width="stretch")
 
     with ui.card():
         ui.section("P5·b", "Cohesive layers: one-dimensional consolidation",
@@ -542,7 +564,7 @@ with tabs[4]:
                        "Cc", "Cs", "e0", "s"]]
             cdf.columns = ["Layer", "Top (m)", "Bottom (m)", "H (m)", "z mid (m)", "σ′0 (kPa)", "σ′p (kPa)",
                            "Δσ (kPa)", "σ′0+Δσ (kPa)", "Case", "Cc", "Cs", "e0", "s (mm)"]
-            st.dataframe(cdf.round(3), hide_index=True, height=300, width="stretch")
+            show_df(cdf.round(3), "consolidation_sublayers", hide_index=True, height=300, width="stretch")
             cols = st.columns(max(1, len(CR.per_layer)))
             for col, (k, v) in zip(cols, CR.per_layer.items()):
                 col.metric(f"{k} (mm)", f"{v * 1000:.1f}")
@@ -579,7 +601,7 @@ with tabs[4]:
             for (Sc, H, cvv, drn), lay in zip(lay_sc, CR.layers):
                 rows.append({"Layer": lay.description, "Hdr (m)": se.drainage_path(H, drn),
                              "t50 (yr)": se.time_for_U(0.5, H, cvv, drn), "t90 (yr)": se.time_for_U(0.9, H, cvv, drn)})
-            st.dataframe(pd.DataFrame(rows).round(3), hide_index=True, width="stretch")
+            show_df(pd.DataFrame(rows).round(3), "consolidation_times", hide_index=True, width="stretch")
 
     total = SR.settlement + CR.total
     with ui.card():
@@ -611,6 +633,7 @@ with tabs[5]:
         with cL:
             fdf = st.data_editor(pd.DataFrame({"Layer": gl, "Fines content FC (%)": [fines0.get(g_, 0.0) for g_ in gl]}),
                                  key=f"fines{ver}", disabled=["Layer"], hide_index=True, width="stretch")
+            csv_button(fdf, "fines_content")
         fines = dict(zip(fdf["Layer"], fdf["Fines content FC (%)"]))
         LR = liq.liquefaction(profile, amax, Mw, energy_ratio=ER, borehole_mm=dbh, fines=fines)
         if LR:
@@ -628,7 +651,7 @@ with tabs[5]:
                     fg.update_yaxes(autorange="reversed", title="Depth (m)")
                     fg.update_layout(xaxis_title="FS against liquefaction (–)")
                     chart(fg, 320)
-            st.dataframe(ldf_.round(3), hide_index=True, width="stretch")
+            show_df(ldf_.round(3), "liquefaction", hide_index=True, width="stretch")
         else:
             st.info("No SPT records in the profile yet.", icon=":material/info:")
 

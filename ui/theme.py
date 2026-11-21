@@ -312,6 +312,12 @@ hr { border-color: rgba(255,255,255,0.08) !important; }
   background: linear-gradient(135deg, #2EF0A8, #FFD27A); box-shadow: 0 0 26px -4px rgba(46,240,168,0.85), inset 0 1px 0 rgba(255,255,255,0.7); }
 .brand-sub { color: var(--muted); font-size: .8rem; margin: 2px 0 10px 50px; }
 
+/* compact "Export CSV" button under each table */
+[class*="st-key-csv_"] { margin-top: -6px; }
+[class*="st-key-csv_"] button { min-height: 0 !important; padding: 5px 14px 5px 11px !important; font-size: .8rem !important;
+  color: var(--mint) !important; background: rgba(46,240,168,0.07) !important; border-color: rgba(46,240,168,0.28) !important; }
+[class*="st-key-csv_"] button p { font-size: .8rem !important; }
+
 .stElementContainer:has(.fs-js), .element-container:has(.fs-js),
 .stElementContainer:has(> [data-testid="stMarkdown"] style:only-child) { display: none !important; }
 
@@ -330,53 +336,64 @@ hr { border-color: rgba(255,255,255,0.08) !important; }
 
 _card = {"n": 0}
 
-# Inertial smooth scrolling for the main page (no external library).  Wheel input is eased
-# towards a target with requestAnimationFrame.  Native behaviour is kept for pinch-zoom
-# (ctrl+wheel), horizontal scrolling, nested scrollers (tables, editors, sidebar) and for
-# users who ask for reduced motion.  Installed once per page, survives Streamlit reruns.
+# Inertial smooth scrolling (no external library).  The wheel scrolls whichever pane is under
+# the pointer - main page or sidebar - eased with requestAnimationFrame.  The listener runs in the
+# capture phase so a focused number box can never swallow the wheel or silently change its value.
+# Native behaviour is kept for pinch-zoom (ctrl+wheel), horizontal scrolling and regions with their
+# own scrolling (tables, data editors, charts, open dropdown lists).  Reduced-motion users get
+# instant (un-eased) scrolling.  Installed once per page load; survives Streamlit reruns.
 SMOOTH_SCROLL_JS = r"""
 <div class="fs-js"></div>
 <script>
 (function () {
-  if (window.__fsSmooth) return;
-  window.__fsSmooth = true;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var EASE = 0.11;
+  var VER = 2;
+  if (window.__fsSmoothVer === VER) return;
+  if (window.__fsWheel) window.removeEventListener('wheel', window.__fsWheel, true);
+  window.__fsSmoothVer = VER;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var EASE = 0.12;
+  var NATIVE = '[data-testid="stDataFrame"], [data-testid="stDataEditor"], [data-testid="stPlotlyChart"], ' +
+               '[role="listbox"], [data-baseweb="popover"], [data-baseweb="menu"], textarea, pre';
   function scrollable(el) {
     var s = getComputedStyle(el);
     return /(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1;
   }
-  function mainScroller() {
-    var sels = ['[data-testid="stMain"]', '[data-testid="stAppViewContainer"]', 'section.main'];
-    for (var i = 0; i < sels.length; i++) {
-      var el = document.querySelector(sels[i]);
-      if (el && scrollable(el)) return el;
+  function paneFor(t) {
+    for (var n = t; n && n !== document.documentElement; n = n.parentElement) {
+      if (n.nodeType === 1 && scrollable(n)) return n;
     }
     return document.scrollingElement;
   }
-  var el = null, cur = 0, target = 0, raf = null;
-  function step() {
-    cur += (target - cur) * EASE;
-    if (Math.abs(target - cur) < 0.5) { cur = target; el.scrollTop = cur; raf = null; return; }
-    el.scrollTop = cur;
-    raf = requestAnimationFrame(step);
+  function delta(e, el) {
+    return e.deltaMode === 1 ? e.deltaY * 40 : (e.deltaMode === 2 ? e.deltaY * el.clientHeight : e.deltaY);
   }
-  window.addEventListener('wheel', function (e) {
-    if (e.ctrlKey || e.defaultPrevented || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    var sc = mainScroller();
-    if (!sc || !sc.contains(e.target)) return;
-    for (var n = e.target; n && n !== sc; n = n.parentElement) {
-      if (n.tagName === 'CANVAS' || scrollable(n)) return;   // let tables / nested panes scroll natively
-    }
-    e.preventDefault();
-    if (raf === null || el !== sc) { el = sc; cur = target = sc.scrollTop; }
-    var dy = e.deltaMode === 1 ? e.deltaY * 40 : (e.deltaMode === 2 ? e.deltaY * sc.clientHeight : e.deltaY);
-    target = Math.max(0, Math.min(sc.scrollHeight - sc.clientHeight, target + dy));
-    if (raf === null) raf = requestAnimationFrame(step);
-  }, { passive: false });
-  // keyboard, scrollbar drags and anchor jumps: resync so the next wheel starts from there
+  var state = new WeakMap();
+  function step(el) {
+    var s = state.get(el);
+    s.cur += (s.target - s.cur) * EASE;
+    if (Math.abs(s.target - s.cur) < 0.5) { s.cur = s.target; el.scrollTop = s.cur; s.raf = null; return; }
+    el.scrollTop = s.cur;
+    s.raf = requestAnimationFrame(function () { step(el); });
+  }
+  function onWheel(e) {
+    if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    var t = e.target;
+    if (!(t instanceof Element) || t.tagName === 'CANVAS' || t.closest(NATIVE)) return;
+    var el = paneFor(t);
+    if (!el) return;
+    e.preventDefault();                       // also stops wheel-stepping of number inputs
+    if (reduce) { el.scrollTop += delta(e, el); return; }
+    var s = state.get(el);
+    if (!s || s.raf === null) { s = { cur: el.scrollTop, target: el.scrollTop, raf: null }; state.set(el, s); }
+    s.target = Math.max(0, Math.min(el.scrollHeight - el.clientHeight, s.target + delta(e, el)));
+    if (s.raf === null) s.raf = requestAnimationFrame(function () { step(el); });
+  }
+  window.__fsWheel = onWheel;
+  window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+  // keyboard, scrollbar drags, anchor jumps: resync so the next wheel starts from there
   document.addEventListener('scroll', function (ev) {
-    if (raf === null && el && ev.target === el) { cur = target = el.scrollTop; }
+    var s = state.get(ev.target);
+    if (s && s.raf === null) { s.cur = s.target = ev.target.scrollTop; }
   }, true);
 })();
 </script>

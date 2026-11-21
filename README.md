@@ -19,7 +19,9 @@ loadable example files in `examples/`.
 | **Extra: Liquefaction** | IS 1893 (Part 1):2016 Annex F simplified procedure (see the justification below) |
 | **P8 Code** | This repository; every equation is commented with its source (`SOURCES.md`) |
 
-All inputs and outputs are in SI units, with the unit shown next to each value.
+All inputs and outputs are in SI units, with the unit shown next to each value. Every table, including the editable input tables, has an **Export CSV** button. The files are UTF-8 so Excel shows σ′, φ′, ° and ³ correctly.
+
+The theme (`ui/theme.py`) targets Streamlit 1.67, so `requirements.txt` pins that version to keep the deployed look identical.
 
 ### Why there is a liquefaction tab
 
