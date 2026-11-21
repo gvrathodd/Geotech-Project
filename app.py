@@ -80,6 +80,42 @@ def csv_button(df: pd.DataFrame, name: str):
                        icon=":material/table_view:", key=f"csv_{slug}")
 
 
+def input_table(df0: pd.DataFrame, name: str, new_row=None, **kw) -> pd.DataFrame:
+    """Editable input table with only real data cells (no row-selector column, no blank 'add' row).
+    Rows are added / removed with explicit buttons; the working copy is kept per profile version."""
+    sk, gk = f"_in_{name}_{ver}", f"_ing_{name}"
+    if sk not in st.session_state:
+        st.session_state[sk] = df0.reset_index(drop=True)
+    gen = st.session_state.get(gk, 0)
+    out = st.data_editor(st.session_state[sk], num_rows="fixed", hide_index=True, width="stretch",
+                         key=f"ed_{name}_{ver}_{gen}", **kw)
+    c1, c2, c3 = st.columns([1.1, 1.1, 2])
+    if c1.button("Add Row", icon=":material/add:", key=f"add_{name}", width="stretch"):
+        row = new_row(out) if new_row else {c: None for c in out.columns}
+        st.session_state[sk] = pd.concat([out, pd.DataFrame([row])], ignore_index=True).astype(out.dtypes.to_dict())
+        st.session_state[gk] = gen + 1
+        st.rerun()
+    if c2.button("Remove Last", icon=":material/remove:", key=f"rm_{name}", width="stretch", disabled=len(out) == 0):
+        st.session_state[sk] = out.iloc[:-1].reset_index(drop=True)
+        st.session_state[gk] = gen + 1
+        st.rerun()
+    with c3:
+        csv_button(out, name)
+    return out
+
+
+def _new_layer(df):
+    last = float(df["Bottom (m)"].max()) if len(df) and df["Bottom (m)"].notna().any() else 0.0
+    row = {c: DEFAULT_LAYER[k] for k, c in LAYER_COLS}
+    row.update({"Top (m)": last, "Bottom (m)": last + 1.0, "Description": "New layer"})
+    return row
+
+
+def _new_spt(df):
+    last = float(df["Depth (m)"].max()) if len(df) and df["Depth (m)"].notna().any() else 0.0
+    return {"Depth (m)": last + 1.5, "N (blows/300 mm)": None, "Refusal": False}
+
+
 def show_df(df: pd.DataFrame, csv: str, highlight=None, **kw):
     """st.dataframe followed by its Export CSV button.  `highlight` = index label of a row to
     highlight (the row matching a point clicked on the chart)."""
@@ -257,9 +293,9 @@ with tabs[0]:
                                 key=f"gwm{ver}", help="Level at the time of SPT/boring")
         gwt_d = c3.number_input("Design water table (m bgl)", 0.0, 100.0, None if _wd is None else float(_wd), 0.1,
                                 key=f"gwd{ver}", help="e.g. highest seasonal level")
-        st.markdown("**Layers**: add or delete rows freely. Units are given in every column heading.")
-        ldf = st.data_editor(
-            layers_to_df(D.get("layers", [])), num_rows="dynamic", key=f"layers{ver}_{st.session_state.get('lv', 0)}", width="stretch",
+        st.markdown("**Layers**: units are given in every column heading.")
+        ldf = input_table(
+            layers_to_df(D.get("layers", [])), "layers", _new_layer,
             column_config={
                 "Type": st.column_config.SelectboxColumn(options=list((GRANULAR, COHESIVE)), required=True),
                 "Stress history": st.column_config.SelectboxColumn(options=list(HISTORY_MODES),
@@ -267,27 +303,8 @@ with tabs[0]:
                 "Drainage": st.column_config.SelectboxColumn(options=["Double", "Top only", "Bottom only"]),
                 "Description": st.column_config.TextColumn(width="medium"),
             })
-        b1, b2 = st.columns([1, 3])
-        if b1.button("Add Layer", icon=":material/add:", width="stretch", key="add_layer"):
-            rows = ldf.rename(columns={c: k for k, c in LAYER_COLS}).to_dict("records")
-            last = max((r["bottom"] for r in rows if pd.notna(r.get("bottom"))), default=0.0)
-            D["layers"] = rows + [dict(top=last, bottom=last + 1.0, description="New layer", soil_type=GRANULAR)]
-            st.session_state["lv"] = st.session_state.get("lv", 0) + 1
-            st.rerun()
-        with b2:
-            csv_button(ldf, "layers")
         st.markdown("**SPT records**: observed N. Tick *Refusal* when 50 blows gave less than 300 mm.")
-        sdf = st.data_editor(spt_to_df(D.get("spt", [])), num_rows="dynamic",
-                             key=f"spt{ver}_{st.session_state.get('sv', 0)}")
-        b1, b2 = st.columns([1, 3])
-        if b1.button("Add SPT Record", icon=":material/add:", width="stretch", key="add_spt"):
-            rows = sdf.rename(columns={c: k for k, c in SPT_COLS}).to_dict("records")
-            last = max((r["depth"] for r in rows if pd.notna(r.get("depth"))), default=0.0)
-            D["spt"] = [r for r in rows] + [dict(depth=last + 1.5, N=None, refusal=False)]
-            st.session_state["sv"] = st.session_state.get("sv", 0) + 1
-            st.rerun()
-        with b2:
-            csv_button(sdf, "spt_records")
+        sdf = input_table(spt_to_df(D.get("spt", [])), "spt_records", _new_spt)
 
     gwt_m = 100.0 if gwt_m is None else gwt_m  # left empty: no water table within the profile
     gwt_d = 100.0 if gwt_d is None else gwt_d
@@ -391,9 +408,8 @@ with tabs[1]:
         with cL:
             pick = st.selectbox("Data set", names, key=f"dspick{ver}")
             dset = ds_sets[names.index(pick)]
-            dsdf = st.data_editor(pd.DataFrame({"σn (kPa)": dset["sigma_n"], "τf (kPa)": dset["tau"]}, dtype="float64"),
-                                  num_rows="dynamic", key=f"ds{ver}{pick}", width="stretch")
-            csv_button(dsdf, f"direct_shear_{pick}")
+            dsdf = input_table(pd.DataFrame({"σn (kPa)": dset["sigma_n"], "τf (kPa)": dset["tau"]}, dtype="float64"),
+                               f"direct_shear_{names.index(pick)}")
             force0 = st.checkbox("Force c′ = 0", False)
         dd = dsdf.dropna()
         if len(dd) >= 2:
@@ -434,10 +450,8 @@ with tabs[1]:
         cols = st.columns(max(1, len(uu)))
         for k, s in enumerate(uu):
             with cols[k]:
-                udf = st.data_editor(pd.DataFrame({"σ3 (kPa)": s.get("sigma3", [None] * len(s["deviator"])),
-                                                   "(σ1−σ3)f (kPa)": s["deviator"]}, dtype="float64"), key=f"uu{ver}{k}",
-                                     num_rows="dynamic", width="stretch")
-                csv_button(udf, f"uu_{s['label']}")
+                udf = input_table(pd.DataFrame({"σ3 (kPa)": s.get("sigma3", [None] * len(s["deviator"])),
+                                                "(σ1−σ3)f (kPa)": s["deviator"]}, dtype="float64"), f"uu_{k}")
                 dv = udf["(σ1−σ3)f (kPa)"].dropna()
                 if len(dv):
                     cu, _ = lab.cu_from_uu(dv)
@@ -457,12 +471,11 @@ with tabs[1]:
         nv = u3.number_input("Points on the virgin line (–)", 2, 5, 2)
         cL, cR = st.columns([1, 1.3])
         with cL:
-            odf = st.data_editor(pd.DataFrame({"Pressure": oed.get("p", []), "Stage": oed.get("stage", []),
-                                               "Void ratio e (–)": oed.get("e", []), "cv": oed.get("cv", [])})
-                                 .astype({"Pressure": "float64", "Void ratio e (–)": "float64", "cv": "float64"}),
-                                 num_rows="dynamic", key=f"oed{ver}", width="stretch",
-                                 column_config={"Stage": st.column_config.SelectboxColumn(options=["Loading", "Unloading"])})
-            csv_button(odf, "oedometer_input")
+            odf = input_table(pd.DataFrame({"Pressure": oed.get("p", []), "Stage": oed.get("stage", []),
+                                            "Void ratio e (–)": oed.get("e", []), "cv": oed.get("cv", [])})
+                              .astype({"Pressure": "float64", "Void ratio e (–)": "float64", "cv": "float64"}),
+                              "oedometer_input",
+                              column_config={"Stage": st.column_config.SelectboxColumn(options=["Loading", "Unloading"])})
         od = odf.dropna(subset=["Pressure", "Void ratio e (–)", "Stage"])
         if (od["Stage"] == "Loading").sum() >= 3:
             try:
