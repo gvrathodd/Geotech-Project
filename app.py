@@ -212,15 +212,19 @@ with st.sidebar:
         L = st.number_input("Length L (m)", 0.3, 60.0, max(3.0, B), 0.05, key="in_L")
     Df = st.number_input("Founding depth Df (m)", 0.0, 10.0, 1.5, 0.1, key="in_Df")
     st.markdown("### Loads · service, at founding level")
-    P = st.number_input("Vertical load P (kN" + ("/m)" if shape == "Strip" else ")"), 0.0, 1e6, 1000.0, 10.0, key="in_P")
+    Q = st.number_input("Column load Q (kN" + ("/m)" if shape == "Strip" else ")"), 0.0, 1e6, 1000.0, 10.0,
+                        key="in_P", help="Resultant load. With α = 0 it is the vertical load.")
+    alpha = st.number_input("Load inclination α (°)", 0.0, 45.0, 0.0, 1.0, key="in_alpha",
+                            help="Inclination of Q to the vertical (0 = vertical load)")
+    P = Q * math.cos(math.radians(alpha))  # vertical component used for pressures; α enters IS 6403 i-factors
+    if alpha > 0:
+        st.caption(f"Vertical P = Q cos α = {P:.1f} · horizontal H = Q sin α = {Q * math.sin(math.radians(alpha)):.1f} kN")
     MB = st.number_input("Moment along B, M_B (kN·m)", 0.0, 1e5, 0.0, 5.0, key="in_MB",
                          help="Moment causing eccentricity in the B direction")
     ML = 0.0
     if shape != "Strip":
         ML = st.number_input("Moment along L, M_L (kN·m)", 0.0, 1e5, 0.0, 5.0, key="in_ML",
                              help="Moment causing eccentricity in the L direction")
-    alpha = st.number_input("Load inclination α (°)", 0.0, 45.0, 0.0, 1.0, key="in_alpha",
-                            help="Inclination of the load to the vertical")
     st.markdown("### Design options")
     FS = st.number_input("Factor of safety on q_nu (–)", 1.0, 10.0, 3.0, 0.5)
     mode_lbl = st.selectbox("Shear failure mode", ["Auto (interpolate φ 28°–36°)", "General", "Local"])

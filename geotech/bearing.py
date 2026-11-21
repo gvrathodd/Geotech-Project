@@ -176,6 +176,11 @@ def bearing_capacity(profile: SoilProfile, shape: str, B: float, L: Optional[flo
     if shape == "Rectangle" and L < B:
         B, L = L, B
         warnings.append("B and L swapped so that B <= L.")
+    if shape == "Rectangle" and abs(L - B) < 1e-9:
+        # IS 6403 Table 2 is not continuous at B/L = 1 (rectangle formula gives sc = 1.2, sg = 0.6;
+        # square row gives 1.3, 0.8): a rectangle with L = B is a square, so the square row is used.
+        shape = "Square"
+        warnings.append("L = B: analysed as a square (IS 6403 Table 2 square factors).")
     lay = layer_override or profile.layer_at(Df + 1e-6)
     # warn if another layer starts within B below the base
     for l in profile.sorted_layers():
