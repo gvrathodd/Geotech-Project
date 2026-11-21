@@ -54,6 +54,8 @@ def schmertmann(profile: SoilProfile, shape: str, B: float, L: Optional[float], 
     Cohesive layers in the influence zone are skipped (their settlement is computed by
     consolidation) unless include_cohesive=True.  E is taken from each layer (kPa).
     """
+    if not profile.layers:  # empty profile: nothing to settle
+        return SchmertmannResult(0.0, 1.0, 1.0, 0.5, 0.0, 0.0, 0.1, 0.0, q_net)
     gwt = profile.gwt_design if gwt is None else gwt
     if shape == "Strip":
         L = 1000.0 * B

@@ -110,7 +110,10 @@ def layers_to_df(layers: list[dict]) -> pd.DataFrame:
     for l in layers:
         full = {**DEFAULT_LAYER, **l}
         rows.append({lab_: full[k] for k, lab_ in LAYER_COLS})
-    return pd.DataFrame(rows, columns=[c for _, c in LAYER_COLS])
+    df = pd.DataFrame(rows, columns=[c for _, c in LAYER_COLS])
+    num = [c for k, c in LAYER_COLS if isinstance(DEFAULT_LAYER[k], float)]
+    flag = [c for k, c in LAYER_COLS if isinstance(DEFAULT_LAYER[k], bool)]
+    return df.astype({**{c: "float64" for c in num}, **{c: "boolean" for c in flag}})
 
 
 def df_to_layers(df: pd.DataFrame) -> list[Layer]:
@@ -135,8 +138,9 @@ def df_to_layers(df: pd.DataFrame) -> list[Layer]:
 
 
 def spt_to_df(spt: list[dict]) -> pd.DataFrame:
-    return pd.DataFrame([{c: s.get(k, False if k == "refusal" else None) for k, c in SPT_COLS} for s in spt],
-                        columns=[c for _, c in SPT_COLS])
+    df = pd.DataFrame([{c: s.get(k, False if k == "refusal" else None) for k, c in SPT_COLS} for s in spt],
+                      columns=[c for _, c in SPT_COLS])
+    return df.astype({"Depth (m)": "float64", "N (blows/300 mm)": "float64", "Refusal": "boolean"})
 
 
 def df_to_spt(df: pd.DataFrame) -> list[SPTRecord]:
@@ -154,11 +158,20 @@ def load_into_state(d: dict):
 
 
 def blank_project() -> dict:
-    return {"name": "New profile", "gwt_measured": 3.0, "gwt_design": 2.0,
-            "layers": [dict(top=0.0, bottom=3.0, description="Sand", soil_type=GRANULAR),
-                       dict(top=3.0, bottom=10.0, description="Clay", soil_type=COHESIVE, gamma_moist=18.0,
-                            gamma_sat=18.5, phi_eff=0.0, cu=30.0, undrained=True, Cc=0.3, Cs=0.04, e0=0.9)],
-            "spt": [dict(depth=1.5, N=10, refusal=False)], "lab": {}, "fines": {}}
+    """A completely empty project: every input is entered from scratch."""
+    return {"name": "New project", "gwt_measured": None, "gwt_design": None, "layers": [], "spt": [],
+            "lab": {"direct_shear": [{"label": "Test 1", "sigma_n": [None] * 3, "tau": [None] * 3}],
+                    "uu": [{"label": "Sample 1", "sigma3": [None] * 3, "deviator": [None] * 3}],
+                    "oedometer": {"p": [], "e": [], "stage": [], "cv": []}},
+            "fines": {}}
+
+
+def new_project():
+    """Button callback: wipe every input (sidebar, tabs, chart selections) and start empty."""
+    for k in list(st.session_state.keys()):
+        if k != "ver":
+            del st.session_state[k]
+    load_into_state(blank_project())
 
 
 if "data" not in st.session_state:
@@ -174,6 +187,8 @@ D = st.session_state.data
 # ================================================================= SIDEBAR
 with st.sidebar:
     ui.brand()
+    st.button("New Project", on_click=new_project, type="primary", width="stretch", icon=":material/add:",
+              help="Clear every input and start a fresh project from scratch")
     ui.toc()
     acct_box = st.container()
     with st.expander("Project file", icon=":material/folder_open:", expanded=False):
@@ -183,9 +198,7 @@ with st.sidebar:
         if c1.button("Load Example", disabled=choice == "—", width="stretch"):
             load_into_state(json.loads((EXAMPLES / choice).read_text()))
             st.rerun()
-        if c2.button("Blank Profile", width="stretch"):
-            load_into_state(blank_project())
-            st.rerun()
+        c2.button("New Project", on_click=new_project, width="stretch", key="new_in_file")
         up = st.file_uploader("Upload project (.json)", type="json")
         if up is not None and st.button("Load Uploaded File", width="stretch"):
             load_into_state(json.loads(up.read()))
@@ -235,9 +248,10 @@ with tabs[0]:
                    "settlement and liquefaction.", anchor="p1")
         c1, c2, c3 = st.columns([2, 1, 1])
         D["name"] = c1.text_input("Profile name", D.get("name", ""), key=f"name{ver}")
-        gwt_m = c2.number_input("Measured water table (m bgl)", 0.0, 100.0, float(D.get("gwt_measured", 3.0)), 0.1,
+        _wm, _wd = D.get("gwt_measured"), D.get("gwt_design")
+        gwt_m = c2.number_input("Measured water table (m bgl)", 0.0, 100.0, None if _wm is None else float(_wm), 0.1,
                                 key=f"gwm{ver}", help="Level at the time of SPT/boring")
-        gwt_d = c3.number_input("Design water table (m bgl)", 0.0, 100.0, float(D.get("gwt_design", 2.0)), 0.1,
+        gwt_d = c3.number_input("Design water table (m bgl)", 0.0, 100.0, None if _wd is None else float(_wd), 0.1,
                                 key=f"gwd{ver}", help="e.g. highest seasonal level")
         st.markdown("**Layers**: add or delete rows freely. Units are given in every column heading.")
         ldf = st.data_editor(
@@ -254,6 +268,8 @@ with tabs[0]:
         sdf = st.data_editor(spt_to_df(D.get("spt", [])), num_rows="dynamic", key=f"spt{ver}")
         csv_button(sdf, "spt_records")
 
+    gwt_m = 100.0 if gwt_m is None else gwt_m  # left empty: no water table within the profile
+    gwt_d = 100.0 if gwt_d is None else gwt_d
     layers = df_to_layers(ldf)
     profile = SoilProfile(layers=layers, gwt_measured=gwt_m, gwt_design=gwt_d, spt=df_to_spt(sdf),
                           name=D.get("name", ""))
@@ -354,7 +370,7 @@ with tabs[1]:
         with cL:
             pick = st.selectbox("Data set", names, key=f"dspick{ver}")
             dset = ds_sets[names.index(pick)]
-            dsdf = st.data_editor(pd.DataFrame({"σn (kPa)": dset["sigma_n"], "τf (kPa)": dset["tau"]}),
+            dsdf = st.data_editor(pd.DataFrame({"σn (kPa)": dset["sigma_n"], "τf (kPa)": dset["tau"]}, dtype="float64"),
                                   num_rows="dynamic", key=f"ds{ver}{pick}", width="stretch")
             csv_button(dsdf, f"direct_shear_{pick}")
             force0 = st.checkbox("Force c′ = 0", False)
@@ -398,7 +414,7 @@ with tabs[1]:
         for k, s in enumerate(uu):
             with cols[k]:
                 udf = st.data_editor(pd.DataFrame({"σ3 (kPa)": s.get("sigma3", [None] * len(s["deviator"])),
-                                                   "(σ1−σ3)f (kPa)": s["deviator"]}), key=f"uu{ver}{k}",
+                                                   "(σ1−σ3)f (kPa)": s["deviator"]}, dtype="float64"), key=f"uu{ver}{k}",
                                      num_rows="dynamic", width="stretch")
                 csv_button(udf, f"uu_{s['label']}")
                 dv = udf["(σ1−σ3)f (kPa)"].dropna()
@@ -421,7 +437,8 @@ with tabs[1]:
         cL, cR = st.columns([1, 1.3])
         with cL:
             odf = st.data_editor(pd.DataFrame({"Pressure": oed.get("p", []), "Stage": oed.get("stage", []),
-                                               "Void ratio e (–)": oed.get("e", []), "cv": oed.get("cv", [])}),
+                                               "Void ratio e (–)": oed.get("e", []), "cv": oed.get("cv", [])})
+                                 .astype({"Pressure": "float64", "Void ratio e (–)": "float64", "cv": "float64"}),
                                  num_rows="dynamic", key=f"oed{ver}", width="stretch",
                                  column_config={"Stage": st.column_config.SelectboxColumn(options=["Loading", "Unloading"])})
             csv_button(odf, "oedometer_input")

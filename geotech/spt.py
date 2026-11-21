@@ -65,6 +65,8 @@ class SPTStep:
 def correct_profile_spt(profile: SoilProfile, cn_max: float = 2.0) -> List[SPTStep]:
     """Apply IS 2131 corrections to every SPT record of a profile, showing each step."""
     out = []
+    if not profile.layers:
+        return out
     gwt = profile.gwt_measured  # corrections use the water level at the time of testing
     for rec in sorted(profile.spt, key=lambda r: r.depth):
         lay = profile.layer_at(rec.depth)

@@ -90,6 +90,8 @@ def liquefaction(profile: SoilProfile, amax_g: float, Mw: float = 7.5, gwt: Opti
                  energy_ratio: float = 60.0, borehole_mm: float = 150.0,
                  fines: Optional[dict] = None, max_depth: float = 20.0) -> List[LiqRow]:
     """Evaluate every SPT record of the profile.  fines: {layer description: FC %}."""
+    if not profile.layers:
+        return []
     gwt = profile.gwt_design if gwt is None else gwt
     fines = fines or {}
     MSF = 10 ** 2.24 / Mw ** 2.56  # Idriss magnitude scaling factor
