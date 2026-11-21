@@ -27,6 +27,7 @@ from geotech import settlement as se
 from geotech import spt as sptmod
 from geotech import stress as stz
 from geotech.profile import COHESIVE, GRANULAR, HISTORY_MODES, Layer, SoilProfile, SPTRecord
+from ui import accounts as acc
 from ui import theme as ui
 
 ROOT = Path(__file__).parent
@@ -165,12 +166,16 @@ if "data" not in st.session_state:
     load_into_state(json.loads(first[0].read_text()) if first else blank_project())
 
 ver = st.session_state.ver
+# footing inputs of a project opened from "My projects" are applied before the widgets exist
+for _k, _v in st.session_state.pop("_pending_footing", {}).items():
+    st.session_state[_k] = _v
 D = st.session_state.data
 
 # ================================================================= SIDEBAR
 with st.sidebar:
     ui.brand()
     ui.toc()
+    acct_box = st.container()
     with st.expander("Project file", icon=":material/folder_open:", expanded=False):
         ex_files = sorted(p.name for p in EXAMPLES.glob("*.json"))
         choice = st.selectbox("Example profile", ["—"] + ex_files, key="ex_choice")
@@ -862,6 +867,49 @@ with tabs[6]:
     with ui.card():
         src = ROOT / "SOURCES.md"
         st.markdown(src.read_text(encoding="utf-8") if src.exists() else "See README.md")
+
+# ------------------------------------------------------------- My projects (optional sign-in)
+FOOT_KEYS = ["in_shape", "in_B", "in_L", "in_Df", "in_P", "in_MB", "in_ML", "in_alpha"]
+with acct_box:
+    with st.expander("My projects", icon=":material/cloud:", expanded=False):
+        if not acc.auth_configured():
+            st.caption("Guest mode. Sign-in is not configured on this server; use Download Project (P1) "
+                       "to keep a copy of your inputs.")
+        elif not acc.user_email():
+            st.caption("Sign in to save projects to your account. Everything works without signing in.")
+            st.button("Sign In with Google", on_click=st.login, icon=":material/login:", width="stretch")
+        else:
+            email = acc.user_email()
+            st.caption(f"Signed in as {email}")
+            try:
+                nm = st.text_input("Project name", D.get("name", "Untitled"), key="acct_name")
+                if st.button("Save Current Project", type="primary", width="stretch", icon=":material/save:"):
+                    data = {**D, **profile.to_dict(),
+                            "footing": {k: st.session_state[k] for k in FOOT_KEYS if k in st.session_state}}
+                    acc.save_project(email, nm, data)
+                    st.toast(f"Saved “{nm}”", icon=":material/check_circle:")
+                saved = acc.list_projects(email)
+                if saved:
+                    labels = {p_["id"]: f'{p_["name"]} · {p_["updated"][:16].replace("T", " ")}' for p_ in saved}
+                    pick_ = st.selectbox("Saved projects", list(labels), format_func=labels.get, key="acct_pick")
+                    c1, c2 = st.columns(2)
+                    if c1.button("Open", width="stretch", icon=":material/folder_open:"):
+                        d_ = acc.load_project(email, pick_)
+                        if d_:
+                            st.session_state["_pending_footing"] = d_.pop("footing", {})
+                            load_into_state(d_)
+                            st.rerun()
+                    with c2.popover("Delete", icon=":material/delete:", width="stretch"):
+                        st.caption(f"Delete “{labels[pick_]}”? This cannot be undone.")
+                        if st.button("Delete Permanently", type="primary", width="stretch"):
+                            acc.delete_project(email, pick_)
+                            st.rerun()
+                else:
+                    st.caption("No saved projects yet.")
+            except Exception as ex:  # noqa: BLE001
+                st.error(f"Project storage is unavailable ({type(ex).__name__}). Check that Firestore is "
+                         "enabled for this project.", icon=":material/error:")
+            st.button("Sign Out", on_click=st.logout, width="stretch", icon=":material/logout:")
 
 # ------------------------------------------------------------- summary strip
 def _delta(key, val, unit="", digits=0):
