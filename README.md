@@ -5,7 +5,7 @@ A web platform for shallow-foundation design to Indian Standards, built for the 
 and footing; nothing about the hostel site is hard-coded. The site data ships only as
 loadable example files in `examples/`.
 
-**Live app:** `<paste the Streamlit Community Cloud URL here>`
+**Live app:** <https://ce-402-geotech-project-g1.streamlit.app>  (free hosting sleeps when idle; if you see "Yes, get this app back up", click it and wait ~30 s)
 
 ## Modules
 
@@ -59,12 +59,20 @@ In the app, open **Project file → Example profile** in the sidebar and load `B
 `BH-2.json` or `BH-3.json`, or click **Blank profile** and type a new one. Use
 **Download project** to save a profile as JSON and **Upload** to reload it.
 
-## Deploy (public URL, no installation for users)
+## Deploy (public URL, no installation for users): Google Cloud Run
 
-1. Sign in at <https://share.streamlit.io> with the GitHub account that owns this repository.
-2. **Create app → Deploy a public app from GitHub**: repository `gvrathodd/Geotech-Project`,
-   branch `main`, main file `app.py`.
-3. Deploy, then paste the URL into this README and the report.
+In Google Cloud Shell (it has `gcloud` built in), run:
+
+```bash
+git clone https://github.com/gvrathodd/Geotech-Project.git && cd Geotech-Project
+gcloud run deploy foundation-studio --source . --region us-central1 --allow-unauthenticated   --min-instances 0 --max-instances 1 --cpu 1 --memory 1Gi --timeout 900 --cpu-throttling
+gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy   --location us-central1 --policy deploy/cleanup-policy.json
+```
+
+These settings keep the app inside Cloud Run's free tier. With minimum instances at 0 it scales to
+zero when idle, and with maximum instances at 1 it can never run more than one copy. CPU is only
+billed during requests, and the cleanup policy keeps only the newest images. Add a small budget
+alert under Billing → Budgets & alerts.
 
 ## Reproduce the hostel design
 

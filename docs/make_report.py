@@ -29,7 +29,7 @@ DOCX = ROOT / "docs" / "CE402_Group1_Report.docx"
 
 GROUP = dict(
     members="[GROUP: Name 1 (Roll no.), Name 2 (Roll no.), Name 3 (Roll no.), Name 4 (Roll no.), Name 5 (Roll no.)]",
-    url="[GROUP: paste Streamlit Community Cloud URL]",
+    url="https://ce-402-geotech-project-g1.streamlit.app",
     repo="https://github.com/gvrathodd/Geotech-Project",
 )
 

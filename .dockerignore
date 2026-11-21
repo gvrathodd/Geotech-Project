@@ -1,0 +1,9 @@
+.git
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+design/out/
+docs/*.docx
+Dockerfile
+.dockerignore

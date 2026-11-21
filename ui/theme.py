@@ -358,6 +358,7 @@ a.tile:focus-visible { outline: 2px solid var(--gold) !important; outline-offset
 /* ---- metrics that open a formula dialog ---- */
 .stElementContainer:has(.fs-why), .element-container:has(.fs-why) { display: none !important; }
 [data-testid="stMetric"].fs-why-able { cursor: pointer; }
+[data-testid="stMetric"].fs-why-able [data-testid="stMetricLabel"] { padding-right: 34px; }
 [data-testid="stMetric"].fs-why-able::after { content: "ƒx"; position: absolute; top: 10px; right: 12px;
   font: 600 .7rem 'JetBrains Mono', monospace; color: var(--gold-soft); padding: 2px 7px; border-radius: 999px;
   background: rgba(255,182,39,0.10); border: 1px solid rgba(255,210,122,0.28); opacity: .55;
@@ -457,6 +458,37 @@ section[data-testid="stSidebar"] .fs-hl { border-radius: 16px; animation: inputh
   section[data-testid="stSidebar"] > div:first-child { margin: 0; height: 100vh; border-radius: 0 26px 26px 0; }
   .tile .val { font-size: 1.7rem; }
 }
+/* =================== phones =================== */
+@media (max-width: 640px) {
+  .block-container { padding: 1rem 0.8rem 5rem !important; }
+  .hero { padding-top: 6px; }
+  .hero-sub { font-size: .95rem; }
+  .chip { font-size: .72rem; padding: 5px 10px; }
+  .horizon { margin: 18px 0 16px; }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .tile { padding: 13px 13px 12px; border-radius: 22px; }
+  .tile .ic { width: 32px; height: 32px; margin-bottom: 9px; }
+  .tile .ic svg { width: 16px; height: 16px; }
+  .tile .val { font-size: 1.45rem; }
+  .tile.text .val { font-size: 1rem; }
+  .tile .lbl { font-size: .74rem; }
+  .tile .delta { display: block; width: fit-content; margin: 3px 0 0; }
+  a.tile .go { top: 10px; right: 10px; width: 26px; height: 26px; }
+  [class*="st-key-glass"] { padding: 1rem 0.85rem 0.9rem !important; border-radius: 24px !important; }
+  .sec h3 { font-size: 1.15rem !important; }
+  .sec-sub { font-size: .84rem; }
+  .stTabs [role="tablist"] { top: 6px; width: 100%; justify-content: flex-start; padding: 5px; }
+  .stTabs [data-testid="stTab"] { padding: 8px 13px; }
+  .stTabs [data-testid="stTab"] p { font-size: .86rem; }
+  [data-testid="stMetric"] { padding: 11px 13px 10px; border-radius: 18px; }
+  .fs-back { right: 12px; bottom: 12px; padding: 10px 14px 10px 12px; font-size: .82rem; }
+  .fs-dialog { padding: 20px 16px 16px; border-radius: 24px; max-height: 86vh; }
+  .fs-why-v { font-size: 1.8rem; }
+  .fs-dialog dd.f { font-size: .88rem; }
+  .fs-dialog dd.n { font-size: .84rem; }
+  .stApp::before { left: -90vmax; top: 60vh; }
+}
+@media (hover: none) { .fs-keys { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
