@@ -440,6 +440,8 @@ def main():
         raft_ang_max=float(dif_raft.ang.max()),
         liq_n_fail=int((L.FS < 1).sum()), liq_fail=L[L.FS < 1][["BH", "depth", "FS"]].round(2).values.tolist(),
     )
+    summ.update(pile_d_max=float(dif_p.d.max()), pile_ang_max=float(dif_p.ang.max()),
+                pile_s_max=float(PL.s_tot.max()))
     (OUT / "summary.json").write_text(json.dumps(summ, indent=2, default=str))
     pd.set_option("display.width", 250)
     pd.set_option("display.max_columns", 40)
