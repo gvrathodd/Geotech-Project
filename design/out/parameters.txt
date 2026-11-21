@@ -1,0 +1,10 @@
+POP = 37.1 kPa (sigma'_p 116.6 - sigma'_v0 79.5 at 7.225 m)
+BH-1 SM: corrected N'' = 18.8, 17.3 -> mean 18.0; phi' = 32.3 deg; qc = 7.22 MPa; E = 18.0 MPa
+BH-1 SP: corrected N'' = 27.3 -> mean 27.3; phi' = 34.9 deg; qc = 13.63 MPa; E = 34.1 MPa
+BH-1 clay: Cc = 0.296, Cs = 0.0382, e0 = 0.918, cu = 28.5 kPa, history = POP 37.1, cv = 2.0 m2/yr
+BH-2 SM: corrected N'' = 20.2, 20.4 -> mean 20.3; phi' = 33.0 deg; qc = 8.12 MPa; E = 20.3 MPa
+BH-2 SP: corrected N'' = 28.8, 32.3, 33.5 -> mean 31.5; phi' = 36.0 deg; qc = 15.76 MPa; E = 39.4 MPa
+BH-2 clay: Cc = 0.288, Cs = 0.0372, e0 = 0.891, cu = 40.5 kPa, history = POP 37.1, cv = 2.0 m2/yr
+BH-3 SM: corrected N'' = 8.8 -> mean 8.8; phi' = 29.7 deg; qc = 3.50 MPa; E = 8.8 MPa
+BH-3 SP: corrected N'' = 16.5 -> mean 16.5; phi' = 31.9 deg; qc = 8.23 MPa; E = 20.6 MPa
+BH-3 clay: Cc = 0.315, Cs = 0.0407, e0 = 0.945, cu = 24.3 kPa, history = NC , cv = 2.0 m2/yr

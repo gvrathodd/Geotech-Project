@@ -1,0 +1,159 @@
+{
+  "name": "BH-2 (near A1, west end) - RL 100.20 m",
+  "gwt_measured": 3.2,
+  "gwt_design": 1.7,
+  "layers": [
+    {
+      "top": 0.0,
+      "bottom": 0.5,
+      "description": "Fill (silty sand, roots)",
+      "soil_type": "Granular",
+      "gamma_moist": 16.5,
+      "gamma_sat": 18.5,
+      "c_eff": 0.0,
+      "phi_eff": 28.0,
+      "cu": 0.0,
+      "E": 5000.0,
+      "Cc": 0.0,
+      "Cs": 0.0,
+      "e0": 0.8,
+      "history": "NC",
+      "history_value": 1.0,
+      "cv": 1.0,
+      "drainage": "Double",
+      "dilatancy": false,
+      "undrained": false
+    },
+    {
+      "top": 0.5,
+      "bottom": 3.8,
+      "description": "SM medium dense silty sand",
+      "soil_type": "Granular",
+      "gamma_moist": 18.2,
+      "gamma_sat": 20.0,
+      "c_eff": 0.0,
+      "phi_eff": 33.0,
+      "cu": 0.0,
+      "E": 20300.0,
+      "Cc": 0.0,
+      "Cs": 0.0,
+      "e0": 0.8,
+      "history": "NC",
+      "history_value": 1.0,
+      "cv": 1.0,
+      "drainage": "Double",
+      "dilatancy": true,
+      "undrained": false
+    },
+    {
+      "top": 3.8,
+      "bottom": 7.6,
+      "description": "SP dense sand + gravel",
+      "soil_type": "Granular",
+      "gamma_moist": 19.3,
+      "gamma_sat": 20.6,
+      "c_eff": 0.0,
+      "phi_eff": 36.0,
+      "cu": 0.0,
+      "E": 39400.0,
+      "Cc": 0.0,
+      "Cs": 0.0,
+      "e0": 0.8,
+      "history": "NC",
+      "history_value": 1.0,
+      "cv": 1.0,
+      "drainage": "Double",
+      "dilatancy": false,
+      "undrained": false
+    },
+    {
+      "top": 7.6,
+      "bottom": 9.6,
+      "description": "CI firm silty clay",
+      "soil_type": "Cohesive",
+      "gamma_moist": 18.7,
+      "gamma_sat": 18.7,
+      "c_eff": 0.0,
+      "phi_eff": 0.0,
+      "cu": 40.5,
+      "E": 20000.0,
+      "Cc": 0.288,
+      "Cs": 0.0372,
+      "e0": 0.891,
+      "history": "POP",
+      "history_value": 37.1,
+      "cv": 2.0,
+      "drainage": "Double",
+      "dilatancy": false,
+      "undrained": false
+    },
+    {
+      "top": 9.6,
+      "bottom": 15.0,
+      "description": "GW very dense sandy gravel",
+      "soil_type": "Granular",
+      "gamma_moist": 21.5,
+      "gamma_sat": 21.5,
+      "c_eff": 0.0,
+      "phi_eff": 40.0,
+      "cu": 0.0,
+      "E": 100000.0,
+      "Cc": 0.0,
+      "Cs": 0.0,
+      "e0": 0.8,
+      "history": "NC",
+      "history_value": 1.0,
+      "cv": 1.0,
+      "drainage": "Double",
+      "dilatancy": false,
+      "undrained": false
+    }
+  ],
+  "spt": [
+    {
+      "depth": 1.5,
+      "N": 14,
+      "refusal": false
+    },
+    {
+      "depth": 3.0,
+      "N": 17,
+      "refusal": false
+    },
+    {
+      "depth": 4.5,
+      "N": 26,
+      "refusal": false
+    },
+    {
+      "depth": 6.0,
+      "N": 31,
+      "refusal": false
+    },
+    {
+      "depth": 7.5,
+      "N": 34,
+      "refusal": false
+    },
+    {
+      "depth": 9.0,
+      "N": 9,
+      "refusal": false
+    },
+    {
+      "depth": 10.5,
+      "N": 100,
+      "refusal": true
+    },
+    {
+      "depth": 12.0,
+      "N": 100,
+      "refusal": true
+    }
+  ],
+  "lab": {},
+  "fines": {
+    "SM medium dense silty sand": 16,
+    "SP dense sand + gravel": 3
+  }
+}

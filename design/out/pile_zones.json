@@ -1,0 +1,54 @@
+{
+  "BH-1": {
+    "tip": 13.1,
+    "gw_top": 10.6,
+    "Qp": 1904.0996723866888,
+    "Qs": 480.2651778082787,
+    "Qu": 2384.3648501949674,
+    "Qa": 953.7459400779869,
+    "NSF": 36.448448520072404,
+    "Qa_net": 917.2974915579146,
+    "liq_layers": [
+      "SM medium dense silty sand"
+    ],
+    "is2911_Qu": null,
+    "is2911_Qa": null,
+    "is2911_Qp": null,
+    "is2911_Qs": null
+  },
+  "BH-2": {
+    "tip": 12.1,
+    "gw_top": 9.6,
+    "Qp": 1904.0996723866888,
+    "Qs": 511.20048759885185,
+    "Qu": 2415.3001599855406,
+    "Qa": 966.1200639942163,
+    "NSF": 53.947222954057096,
+    "Qa_net": 912.1728410401591,
+    "liq_layers": [
+      "SM medium dense silty sand"
+    ],
+    "is2911_Qu": null,
+    "is2911_Qa": null,
+    "is2911_Qp": null,
+    "is2911_Qs": null
+  },
+  "BH-3": {
+    "tip": 13.7,
+    "gw_top": 11.2,
+    "Qp": 1904.0996723866888,
+    "Qs": 453.4756631472052,
+    "Qu": 2357.575335533894,
+    "Qa": 943.0301342135575,
+    "NSF": 55.31598566623199,
+    "Qa_net": 887.7141485473255,
+    "liq_layers": [
+      "SM loose silty fine sand",
+      "SP medium dense fine-medium sand"
+    ],
+    "is2911_Qu": null,
+    "is2911_Qa": null,
+    "is2911_Qp": null,
+    "is2911_Qs": null
+  }
+}
