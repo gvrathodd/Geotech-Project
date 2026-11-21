@@ -5,7 +5,7 @@ A web platform for shallow-foundation design to Indian Standards, built for the 
 and footing; nothing about the hostel site is hard-coded. The site data ships only as
 loadable example files in `examples/`.
 
-**Live app:** <https://ce-402-geotech-project-g1.streamlit.app>  (free hosting sleeps when idle; if you see "Yes, get this app back up", click it and wait ~30 s)
+**Live app:** <https://foundation-studio-237377681531.us-central1.run.app>  (Google Cloud Run; the first visit after idle takes ~10 s to start)
 
 ## Modules
 
