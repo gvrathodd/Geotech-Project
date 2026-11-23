@@ -36,6 +36,12 @@ EXAMPLES = ROOT / "examples"
 st.set_page_config(page_title="Foundation Studio · CE 402", page_icon=":material/foundation:", layout="wide")
 ui.inject()
 
+if st.query_params.get("page") == "privacy":  # public privacy policy (required for Google sign-in)
+    with ui.card():
+        st.markdown((ROOT / "PRIVACY.md").read_text(encoding="utf-8"))
+        st.link_button("Back to Foundation Studio", "./", icon=":material/arrow_back:")
+    st.stop()
+
 
 def chart(fig, height=None, key=None, select=False):
     """Render a Plotly figure with the glass template (Streamlit's own theme off).
