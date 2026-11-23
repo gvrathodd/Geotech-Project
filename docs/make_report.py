@@ -16,6 +16,8 @@ import pandas as pd
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,17 +48,128 @@ PZ = json.loads((OUT / "pile_zones.json").read_text())
 PROF = {bh: SoilProfile.from_dict(json.loads((ROOT / "examples" / f"{bh}.json").read_text()))
         for bh in ("BH-1", "BH-2", "BH-3")}
 
+NAVY = RGBColor(0x1F, 0x38, 0x64)
+GREY = RGBColor(0x59, 0x59, 0x59)
+REPORT_NO = "CE402-G1-GDR-01"
+
 doc = Document()
-st = doc.styles["Normal"]
-st.font.name = "Calibri"
-st.font.size = Pt(10.5)
-for s in doc.sections:
-    s.left_margin = s.right_margin = Cm(2.0)
-    s.top_margin = s.bottom_margin = Cm(1.8)
+
+
+def _font(style, name="Arial", size=None, color=None, bold=None):
+    style.font.name = name
+    rf = style.element.get_or_add_rPr().get_or_add_rFonts()
+    for a in ("w:asciiTheme", "w:hAnsiTheme", "w:eastAsiaTheme", "w:cstheme"):
+        rf.attrib.pop(qn(a), None)
+    rf.set(qn("w:eastAsia"), name)
+    if size:
+        style.font.size = Pt(size)
+    if color is not None:
+        style.font.color.rgb = color
+    if bold is not None:
+        style.font.bold = bold
+
+
+_font(doc.styles["Normal"], size=10.5, color=RGBColor(0x26, 0x26, 0x26))
+doc.styles["Normal"].paragraph_format.space_after = Pt(5)
+doc.styles["Normal"].paragraph_format.line_spacing = 1.12
+for _name, _size in (("Heading 1", 15), ("Heading 2", 12.5), ("Heading 3", 11)):
+    _font(doc.styles[_name], size=_size, color=NAVY, bold=True)
+    doc.styles[_name].paragraph_format.space_before = Pt(14 if _name == "Heading 1" else 10)
+    doc.styles[_name].paragraph_format.space_after = Pt(5)
+# rule under Heading 1
+_pbdr = OxmlElement("w:pBdr")
+_bot = OxmlElement("w:bottom")
+for k, v in (("w:val", "single"), ("w:sz", "8"), ("w:space", "2"), ("w:color", "1F3864")):
+    _bot.set(qn(k), v)
+_pbdr.append(_bot)
+doc.styles["Heading 1"].element.get_or_add_pPr().append(_pbdr)
+for _st in ("List Bullet", "List Number"):
+    _font(doc.styles[_st], size=10.5)
+
+sec = doc.sections[0]
+sec.left_margin = sec.right_margin = Cm(2.2)
+sec.top_margin, sec.bottom_margin = Cm(2.2), Cm(2.0)
+sec.different_first_page_header_footer = True
+
+
+def _shade(cell, fill):
+    pr = cell._tc.get_or_add_tcPr()
+    sh = OxmlElement("w:shd")
+    sh.set(qn("w:val"), "clear"), sh.set(qn("w:color"), "auto"), sh.set(qn("w:fill"), fill)
+    pr.append(sh)
+
+
+def _borders(table, color="BFBFBF", sz=4, edges=("top", "left", "bottom", "right", "insideH", "insideV")):
+    b = OxmlElement("w:tblBorders")
+    for e in edges:
+        el = OxmlElement(f"w:{e}")
+        el.set(qn("w:val"), "single"), el.set(qn("w:sz"), str(sz)), el.set(qn("w:color"), color)
+        b.append(el)
+    table._tbl.tblPr.append(b)
+
+
+def _field(par, instr, placeholder="1", size=None, color=None):
+    r = par.add_run()
+    if size:
+        r.font.size = Pt(size)
+    if color is not None:
+        r.font.color.rgb = color
+    for kind, text in (("begin", None), ("instr", instr), ("separate", None), ("text", placeholder), ("end", None)):
+        if kind == "instr":
+            el = OxmlElement("w:instrText")
+            el.set(qn("xml:space"), "preserve")
+            el.text = text
+        elif kind == "text":
+            el = OxmlElement("w:t")
+            el.text = text
+        else:
+            el = OxmlElement("w:fldChar")
+            el.set(qn("w:fldCharType"), kind)
+        r._r.append(el)
+
+
+# header / footer (not on the cover)
+_hp = sec.header.paragraphs[0]
+_hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+_hr = _hp.add_run(f"Students' Hostel, Mandi – Geotechnical Design Report  |  {REPORT_NO}  |  Rev 0")
+_hr.font.size, _hr.font.color.rgb = Pt(8), GREY
+_fp = sec.footer.paragraphs[0]
+_fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+_fr = _fp.add_run("CE 402 Geotechnical Engineering · Group 1 · IIT Mandi        Page ")
+_fr.font.size, _fr.font.color.rgb = Pt(8), GREY
+_field(_fp, "PAGE", size=8, color=GREY)
+_fr2 = _fp.add_run(" of ")
+_fr2.font.size, _fr2.font.color.rgb = Pt(8), GREY
+_field(_fp, "NUMPAGES", size=8, color=GREY)
 
 
 def H(t, l=1):
     doc.add_heading(t, level=l)
+
+
+def _runs(p, t, bold=False, italic=False, size=None, color=None):
+    for part in re.split(r"(\*\*[^*]+\*\*)", t):
+        if not part:
+            continue
+        r = p.add_run(part[2:-2] if part.startswith("**") and part.endswith("**") else part)
+        r.bold = True if (part.startswith("**") and part.endswith("**")) else bold
+        r.italic = italic
+        if size:
+            r.font.size = Pt(size)
+        if color is not None:
+            r.font.color.rgb = color if isinstance(color, RGBColor) else RGBColor(*color)
+    return p
+
+
+def CALLOUT(t):
+    """Executive-summary box: light navy fill with a navy left rule."""
+    tb = doc.add_table(rows=1, cols=1)
+    c = tb.rows[0].cells[0]
+    _shade(c, "EAF0F8")
+    _borders(tb, color="1F3864", sz=24, edges=("left",))
+    c.paragraphs[0].paragraph_format.space_before = Pt(4)
+    _runs(c.paragraphs[0], t)
+    doc.add_paragraph()
 
 
 def P(t="", bold=False, italic=False, size=None, align=None, color=None):
@@ -92,21 +205,23 @@ def B(t):
 
 def T(df: pd.DataFrame, widths=None, size=8.5, fmt=None):
     t = doc.add_table(rows=1, cols=len(df.columns))
-    t.style = "Light Grid Accent 1"
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    _borders(t)
     for i, c in enumerate(df.columns):
         cell = t.rows[0].cells[i]
         cell.text = ""
+        _shade(cell, "1F3864")
         r = cell.paragraphs[0].add_run(str(c))
-        r.bold = True
-        r.font.size = Pt(size)
-    for _, row in df.iterrows():
+        r.bold, r.font.size, r.font.color.rgb = True, Pt(size), RGBColor(0xFF, 0xFF, 0xFF)
+    for k, (_, row) in enumerate(df.iterrows()):
         cells = t.add_row().cells
         for i, v in enumerate(row):
             if isinstance(v, float):
                 v = "–" if (math.isnan(v) or math.isinf(v)) else (fmt or "{:.2f}").format(v)
             cells[i].text = ""
             cells[i].paragraphs[0].add_run(str(v)).font.size = Pt(size)
+            if k % 2:
+                _shade(cells[i], "F2F2F2")
     if widths:
         for row in t.rows:
             for i, w in enumerate(widths):
@@ -122,17 +237,36 @@ def FIG(name, caption, w=16):
 
 
 # ============================================================== title
-P("School of Civil and Environmental Engineering, IIT Mandi", bold=True, size=12, align="c")
-P("CE 402 Geotechnical Engineering – Assignment", bold=True, size=14, align="c")
-P("Foundation design of a G+3 students' hostel, Mandi (Zone V)\nand a web platform for shallow-foundation design",
-  bold=True, size=16, align="c")
-P("Group 1  (λ = 1 + g/100 = 1.01)", size=12, align="c")
-P(GROUP["members"], align="c")
-P(f"Platform: {GROUP['url']}\nSource code: {GROUP['repo']}", align="c")
-P("Submitted: 26 November 2026", align="c")
+doc.add_picture(str(ROOT / "ui" / "logo.jpg"), width=Cm(2.4))
+P("GEOTECHNICAL DESIGN REPORT", bold=True, size=11, color=(0x1F, 0x38, 0x64))
+P("Foundation Design of a G+3 Students' Hostel, Mandi (Seismic Zone V)", bold=True, size=22,
+  color=(0x1F, 0x38, 0x64))
+P("with a web platform for shallow-foundation design to Indian Standards", size=12, color=(0x59, 0x59, 0x59))
+doc.add_paragraph()
+_info = [("Report No.", REPORT_NO), ("Revision", "0 – Issued for submission"), ("Date", "26 November 2026"),
+         ("Project", "Students' hostel (ground + 3 storeys, RC frame with masonry infill), Mandi, Himachal Pradesh"),
+         ("Client", "School of Civil and Environmental Engineering, IIT Mandi – CE 402 Geotechnical Engineering"),
+         ("Prepared by", "Group 1 (λ = 1.01): " + GROUP["members"]),
+         ("Design platform", GROUP["url"]), ("Source code", GROUP["repo"])]
+_it = doc.add_table(rows=0, cols=2)
+_borders(_it)
+for k_, v_ in _info:
+    c0, c1 = _it.add_row().cells
+    _shade(c0, "EAF0F8")
+    _runs(c0.paragraphs[0], k_, bold=True, size=9.5, color=NAVY)
+    _runs(c1.paragraphs[0], v_, size=9.5)
+    c0.width, c1.width = Cm(3.6), Cm(13.0)
+doc.add_paragraph()
+P("Document control", bold=True, size=10.5, color=(0x1F, 0x38, 0x64))
+T(pd.DataFrame([["0", "26-11-2026", "Issued for submission", "Group 1", "Group 1", "–"]],
+               columns=["Rev", "Date", "Description", "Prepared", "Checked", "Approved"]), size=9)
+doc.add_page_break()
+P("Contents", bold=True, size=15, color=(0x1F, 0x38, 0x64))
+_field(doc.add_paragraph(), 'TOC \\o "1-2" \\h \\z \\u', "Right-click and choose Update Field to build the contents.")
+doc.add_page_break()
 
-H("Summary", 1)
-P(f"The hostel's 28 columns (total service load {S['total_P']:.0f} kN, including the λ = 1.01 factor) "
+H("Executive summary", 1)
+CALLOUT(f"The hostel's 28 columns (total service load {S['total_P']:.0f} kN, including the λ = 1.01 factor) "
   "were first designed on isolated footings at Df = 1.5 m to IS 6403:1981 with FS = 3. "
   "**Every footing passes bearing capacity**, with sizes from 1.5 m (BH-2 corners) to 3.7 m (BH-3 interior). "
   f"**Settlement does not pass.** With stress overlap from neighbouring footings included, the soft normally "
