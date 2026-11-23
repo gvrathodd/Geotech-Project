@@ -77,3 +77,7 @@ SOURCES.md    reference list for every equation
 
 Group 1. AI tools were used for code and drafting (see `docs/AI_LOG.md`). Every equation,
 parameter and number was checked by the group, and the group is responsible for them.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). The design results are for academic use; check them independently before using them for real construction.
