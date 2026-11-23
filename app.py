@@ -95,13 +95,15 @@ def input_table(df0: pd.DataFrame, name: str, new_row=None, **kw) -> pd.DataFram
     gen = st.session_state.get(gk, 0)
     out = st.data_editor(st.session_state[sk], num_rows="fixed", hide_index=True, width="stretch",
                          key=f"ed_{name}_{ver}_{gen}", **kw)
-    c1, c2, c3 = st.columns([1.1, 1.1, 2])
-    if c1.button("Add Row", icon=":material/add:", key=f"add_{name}", width="stretch"):
+    st.caption("✎ Input table · double-click a cell to edit")
+    c1, c2, c3 = st.columns(3)
+    if c1.button("Add", icon=":material/add:", key=f"add_{name}", width="stretch", help="Add a row at the bottom"):
         row = new_row(out) if new_row else {c: None for c in out.columns}
         st.session_state[sk] = pd.concat([out, pd.DataFrame([row])], ignore_index=True).astype(out.dtypes.to_dict())
         st.session_state[gk] = gen + 1
         st.rerun()
-    if c2.button("Remove Last", icon=":material/remove:", key=f"rm_{name}", width="stretch", disabled=len(out) == 0):
+    if c2.button("Remove", icon=":material/remove:", key=f"rm_{name}", width="stretch", disabled=len(out) == 0,
+                 help="Remove the last row"):
         st.session_state[sk] = out.iloc[:-1].reset_index(drop=True)
         st.session_state[gk] = gen + 1
         st.rerun()
@@ -125,6 +127,7 @@ def _new_spt(df):
 def show_df(df: pd.DataFrame, csv: str, highlight=None, **kw):
     """st.dataframe followed by its Export CSV button.  `highlight` = index label of a row to
     highlight (the row matching a point clicked on the chart)."""
+    st.caption("Result · read-only")
     if highlight is not None and highlight in df.index:
         sty = (df.style.apply(lambda r: [HL] * len(r) if r.name == highlight else [""] * len(r), axis=1)
                .format(precision=3, na_rep="–"))

@@ -444,7 +444,6 @@ section[data-testid="stSidebar"] .fs-hl { border-radius: 16px; animation: inputh
 }
 
 /* compact "Export CSV" button under each table */
-[class*="st-key-csv_"] { margin-top: -6px; }
 [class*="st-key-csv_"] button { min-height: 0 !important; padding: 5px 14px 5px 11px !important; font-size: .8rem !important;
   color: var(--mint) !important; background: rgba(46,240,168,0.07) !important; border-color: rgba(46,240,168,0.28) !important; }
 [class*="st-key-csv_"] button p { font-size: .8rem !important; }
@@ -462,14 +461,8 @@ section[data-testid="stSidebar"] .fs-hl { border-radius: 16px; animation: inputh
 }
 /* =================== input vs result tables =================== */
 /* input tables = data editors: their toolbar has "Add row" (fines editor has fixed rows) */
-.stElementContainer:is([class*="st-key-ed_"], [class*="st-key-fines"]):has([data-testid="stDataFrame"])::after {
-  content: "✎  INPUT TABLE · double-click a cell to edit · use Add Row / Remove Last below"; display: block; margin: 8px 0 2px;
-  font: 700 .72rem 'Inter', sans-serif; letter-spacing: .08em; color: var(--mint); }
 .stElementContainer:is([class*="st-key-ed_"], [class*="st-key-fines"]) [data-testid="stDataFrame"] {
   border-radius: 16px; box-shadow: 0 0 0 2px rgba(46,240,168,0.6), 0 0 28px -6px rgba(46,240,168,0.55) !important; }
-.stElementContainer:has([data-testid="stDataFrame"]):not([class*="st-key-ed_"]):not([class*="st-key-fines"])::before {
-  content: "RESULT · read-only"; display: block; margin: 2px 0 8px;
-  font: 700 .7rem 'Inter', sans-serif; letter-spacing: .08em; color: var(--muted); opacity: .75; }
 /* keep the editor toolbar visible and turn "Add row" into a labelled pill */
 
 
