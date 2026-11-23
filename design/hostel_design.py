@@ -199,7 +199,7 @@ SOCKET = 2.5  # m into the very dense gravel (> 3D = 2.25 m)
 CUTOFF = DF  # pile cap underside at 1.5 m
 PILE_FS = 2.5  # IS 2911 static formula factor of safety
 PHI_GW = 40.0  # deg, very dense sandy gravel with cobbles (SPT refusal)
-NQ_IS2911 = None  # Nq read by the group from IS 2911 Fig. 1 for phi = 40 deg (None -> cross-check skipped)
+NQ_IS2911 = 140.0  # Nq read by the group from IS 2911 (Part 1/Sec 2) Fig. 1 for phi = 40 deg
 EP = 5000 * math.sqrt(30) * 1000  # kPa, IS 456 Ec = 5000 sqrt(fck), M30
 ES_GW = 100000.0  # kPa, very dense gravel
 CAP_T, GC = 1.0, 25.0  # cap thickness (m), RCC unit weight (kN/m3)

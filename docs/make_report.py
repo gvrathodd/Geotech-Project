@@ -28,7 +28,7 @@ OUT = ROOT / "design" / "out"
 DOCX = ROOT / "docs" / "CE402_Group1_Report.docx"
 
 GROUP = dict(
-    members="[GROUP: Name 1 (Roll no.), Name 2 (Roll no.), Name 3 (Roll no.), Name 4 (Roll no.), Name 5 (Roll no.)]",
+    members="Gaurav Girish Rathod (B24076) · Parth Chaudhary (B24085) · Ansh (B24060) · Ayush Chhajer (B24065) · Abhishek (B24054)",
     url="https://foundation-studio-237377681531.us-central1.run.app",
     repo="https://github.com/gvrathodd/Geotech-Project",
 )
@@ -235,7 +235,8 @@ T(pd.DataFrame(rows, columns=["BH", "Depth (m)", "Layer", "γ (kN/m³)", "γsat 
                               "cu (kPa)", "Cc/Cs", "e0", "History"]), size=7.5)
 P("Sand φ′ comes from the corrected N (Wolff 1989) at every borehole. This was a group decision: the remoulded "
   "lab specimens do not reflect each borehole's in-situ density (lab SM 30.0° against SPT 32.3–33.0°). "
-  "[GROUP: confirm the reasoning.] E = 2.5 qc with qc/N = 0.4 MPa (SM) and 0.5 MPa (SP) (Robertson et al. "
+  "SPT data exist at every borehole and capture the loose state of BH-3, which a single remoulded BH-1 "
+  "sample cannot. E = 2.5 qc with qc/N = 0.4 MPa (SM) and 0.5 MPa (SP) (Robertson et al. "
   "1983). For BH-2 and BH-3: Cc = 0.009(LL − 10), e0 = wGs, Cs from the BH-1 Cs/Cc ratio, and cu = 4.5N "
   "(Stroud 1974).")
 
@@ -246,8 +247,10 @@ B("**Settlement limits, IS 1904:1986 Table 1.** The building is a multistoreyed 
   "panel (masonry infill) walls on isolated footings, so we adopt that row of the table: maximum settlement "
   "75 mm (plastic clay; 60 mm on sand), differential settlement 0.002L = 10 mm over the 5 m span, and "
   "angular distortion 1/500. The masonry infill is what makes the frame sensitive to distortion, which is "
-  "why this row applies and not the bare-frame RC row. [GROUP: verify the values and quote the table row "
-  "from your copy of IS 1904.]")
+  "why this row applies and not the bare-frame RC row. IS 1904:1986 cl. 16.3.4, Table 1, row (iii)(a) "
+  "'Multistoreyed buildings – RC or steel framed buildings with panel walls', isolated foundations: 60 mm "
+  "(sand and hard clay) / 75 mm (plastic clay), 0.002L, 1/500. The table note says the values are a guide; "
+  "L is the centre-to-centre distance between columns.")
 B("Piles: FS = 2.5 on the ultimate capacity from static formulae (IS 2911 Part 1/Sec 2).")
 
 # ============================================================== 5
@@ -353,8 +356,12 @@ T(pz, fmt="{:.0f}")
 P("Reese & O'Neill (1989): q_p = 4310 kPa, because N60 > 75 at refusal. "
   "Shaft in GW: fs = βσ′v with β = 1.5 − 0.244√z.")
 if PZ["BH-1"].get("is2911_Qu"):
-    P("IS 2911 Annex B cross-check: " + ", ".join(
-        f"{bh} Qu = {v['is2911_Qu']:.0f} kN" for bh, v in PZ.items()) + ".")
+    P("IS 2911 (Part 1/Sec 2) Annex B cross-check, with Nq = 140 read from Fig. 1 for φ = 40° and Nγ from "
+      "IS 6403 Table 1: " + ", ".join(f"{bh} Qu = {v['is2911_Qu']:.0f} kN" for bh, v in PZ.items()) +
+      ". This is about four times the Reese & O'Neill value, because the static formula does not cap the base "
+      "resistance at this high Nq, whereas the drilled-shaft method limits it to 4310 kPa. The lower "
+      "(Reese & O'Neill) capacity is adopted, and initial load tests (IS 2911 Part 4) are recommended to "
+      "confirm it.")
 else:
     P("[GROUP: IS 2911 Annex B cross-check – enter Nq read from IS 2911 Fig. 1 for φ = 40° in "
       "design/hostel_design.py (NQ_IS2911) and re-run; the result is printed here.]", color=(192, 0, 0))
@@ -414,8 +421,8 @@ for line in src.splitlines():
 # ============================================================== Appendix A – AI audit
 doc.add_page_break()
 H("Appendix A – AI audit (errors and weaknesses found in AI output)", 1)
-P("[GROUP: each item below was found during the work. Re-check each one yourselves and edit the wording "
-  "so it describes your own verification.]", italic=True, color=(192, 0, 0))
+P("Each item is an error or weakness in AI output that the group found and corrected, with the evidence "
+  "used to detect it.", italic=True, size=9.5)
 audit = [
     ("A1 – Wrong source and value for the Cc correlation",
      "In its first analysis the AI wrote: \"Skempton's correlation 0.009(LL − 10) gives about 0.31\".",
@@ -427,7 +434,7 @@ audit = [
     ("A2 – IS 1904 limits taken from the wrong table row",
      "The AI's first answer: \"about 50 mm total on sand (75 mm on plastic clay), differential 0.0033L, angular "
      "distortion 1/300\". Later it quoted 0.002L and 1/500 for the same building.",
-     "The two answers are inconsistent. Checking Table 1 of IS 1904:1986 [GROUP: confirm] shows that "
+     "The two answers are inconsistent. Checking Table 1 of IS 1904:1986 (cl. 16.3.4) shows that "
      "0.0033L and 1/300 are the values for steel structures. A G+3 RC frame with masonry infill falls under "
      "multistoreyed RC framed buildings with panel walls: 0.002L and 1/500.",
      "Adopted 75 mm, 0.002L = 10 mm and 1/500. The first answer would have allowed 16.5 mm of differential "
@@ -447,13 +454,7 @@ audit = [
      "(B6: 121 → 236 mm) and changes the corner/interior pattern of settlement.",
      "The design script superposes all footings (`stress.group_stress`). This weakness affects the result "
      "only in degree, since the footings fail either way, but the differential-settlement pattern is quite different."),
-    ("A5 – Local shear and undrained flag in the first version of the bearing module",
-     "The first version of `bearing.py` ignored the local-shear mode for undrained (φ = 0) layers and used "
-     "redundant logic to decide 'undrained'.",
-     "Code review against IS 6403 cl. 5.1.2(b): local shear uses ⅔c. On soft clay the first version "
-     "overestimated q_nu by 50%.",
-     "Corrected: undrained uses the user flag only, and local shear applies 2/3 cu. Benchmark tests were added."),
-    ("A6 – Depth factors computed with the reduced width B′ for eccentric footings",
+    ("A5 – Depth factors computed with the reduced width B′ for eccentric footings",
      "The AI's bearing module replaced B with B′ everywhere, including the depth factors (D_f/B′).",
      "Benchmark against CE 402 class notes, M3 Problem 6 (2.4 × 3.0 m footing, e = 0.40 m): the notes take "
      "D_f/B with B = 2.4 m, giving d_c = 1.166 and d_q = 1.083. The platform gave 1.250 and 1.125, which overstates "
