@@ -537,8 +537,14 @@ for t in [
     "factor and W′ displayed; effective area; footing sizing; soft-layer check.",
     "P4 – Boussinesq centre and corner (superposition) and 2:1, with Δσz plotted against depth; stress at any point.",
     "P5 – Schmertmann (1978); NC/OC consolidation in sublayers ≤ 0.5 m; time–settlement with user-selected drainage.",
-    "Verification – 18 automated benchmark tests (IS 6403 Table 1 factors, Newmark influence values, "
-    "Terzaghi U(Tv), and hand calculations for each module): `python -m pytest`.",
+    "Verification – 20 automated benchmark tests (IS 6403 Table 1 factors, Newmark influence values, "
+    "Terzaghi U(Tv), hand calculations for each module, and CE 402 class-notes problems M3-P6 and M3-Q12): "
+    "`python -m pytest`.",
+    "Hosting – Google Cloud Run (scales to zero, at most one instance, within the free tier). Every result "
+    "has an ƒx dialog with its formula, the numbers substituted and the source; every table exports to CSV.",
+    "Accounts (optional) – the app works fully without signing in. Users who sign in with Google can save, "
+    "open and delete their own projects, which are stored privately per user in Google Cloud Firestore. "
+    f"Privacy policy: {GROUP['url']}/?page=privacy",
 ]:
     B(t)
 

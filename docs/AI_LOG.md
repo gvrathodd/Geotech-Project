@@ -102,3 +102,18 @@ Each row is a choice the AI proposed in the code; the group decides.
 | New Project button, input/result table marking, Add Row / Remove Last | Accepted | Group feedback that tables were not intuitive |
 | Rectangle L = B vs square mismatch (raised by Ayush Chhajer) | **Group finding**, fixed | IS 6403 Table 2 is discontinuous at B/L = 1; a square uses the square row |
 | Single inclined load Q at α (suggested by Ayush Chhajer) | Accepted | P = Q cos α for pressures, α for inclination factors |
+
+## Session 5 – 22–23 Nov 2026 – Claude Code: finishing, report, repository and publishing
+
+**Prompts (verbatim):** "App logo please / Make something cool and good to look at" · "Save it as jpg too" · "What are the dilevrables remaining? I showed website to sir, it is approved?" · "Get this on your own" (IS 1904 limits) · "its something around 140 (get it yourself)" (IS 2911 Nq) · "Ask me and complete the project" · "Change the report style" · "Remove claude from git / Then push" · "Lets give it a licence" · "How to do that anyone can sign in?" · "Add this to ai log and everywhere else too"
+
+| AI output | Accepted / changed / rejected | Reason |
+|---|---|---|
+| Logo: column on a spread footing, pressure bulb, three soil strata (SVG + JPG) | Accepted | Matches the app's emerald/gold theme |
+| IS 1904:1986 Table 1 read from the code text (cl. 16.3.4, row iii(a): 60/75 mm, 0.002L, 1/500) | Accepted | Confirms the adopted limits; the earlier from-memory values are now verified |
+| IS 2911 cross-check with the group's Nq = 140 (from Fig. 1): Qu ≈ 4× Reese & O'Neill | Accepted; the lower value is kept | Conservative; load test recommended |
+| Report style options | **Chosen by group:** professional consultancy (cover, document control, contents, executive summary box) | Presentation |
+| Audit trimmed to 5 items (local-shear item dropped) | Accepted | The brief limits the audit to 2 pages |
+| Remove the AI co-author trailer from the git history | Done at the group's request; files unchanged | Authorship of the repository |
+| MIT licence, copyright to all five members | Chosen by group | Open, permissive academic licence |
+| Publishing Google sign-in needs a privacy policy → `?page=privacy` page | Accepted | Required by Google to publish; no data is shared with third parties |

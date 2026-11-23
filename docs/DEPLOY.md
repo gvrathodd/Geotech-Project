@@ -36,3 +36,13 @@ gcloud run deploy foundation-studio --source . --region us-central1 --allow-unau
 ```
 
 Without the secret, the app runs in guest mode and hides saving.
+
+### Letting anyone sign in (publishing the consent screen)
+
+1. In Google Auth Platform → Branding, set App name *Foundation Studio*, the support and developer emails,
+   the home page `https://foundation-studio-237377681531.us-central1.run.app`, the privacy policy
+   `https://foundation-studio-237377681531.us-central1.run.app/?page=privacy` (served by `app.py` from
+   `PRIVACY.md`), and the authorized domain `foundation-studio-237377681531.us-central1.run.app`.
+   Leave the logo empty, because uploading one triggers Google's verification review.
+2. Audience → **Publish app**. The app only asks for name and email, so no review is needed and it costs
+   nothing; any Google account can then sign in.

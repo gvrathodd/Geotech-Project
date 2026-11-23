@@ -7,6 +7,8 @@ input files in `examples/`.
 
 **Live app:** <https://foundation-studio-237377681531.us-central1.run.app>
 
+No sign-in is needed. Signing in with Google is optional and lets you save projects to your account ([privacy policy](https://foundation-studio-237377681531.us-central1.run.app/?page=privacy)).
+
 ## Modules
 
 | Module | Scope |
